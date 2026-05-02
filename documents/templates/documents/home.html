@@ -1,0 +1,200 @@
+{% extends "documents/base.html" %}
+{% load static %}
+
+{% block title %}Mis Documentos{% endblock %}
+
+{% block content %}
+  <section class="hero-card">
+    <div class="hero-text">
+      <p class="eyebrow">Validación bancaria</p>
+      <h1>Sube documentos, controla revisiones y recibe resultados rápidos.</h1>
+      <p>Una experiencia fluida para clientes y trabajadores, con seguimiento de auditoría y seguridad de datos cifrados.</p>
+        <div class="hero-actions">
+        </div>
+    </div>
+    <div class="hero-visual">
+      <div class="stat-card animate-float">
+        <strong>100%</strong>
+        <span>Seguridad en el flujo de revisión</span>
+      </div>
+      <div class="stat-card animate-float delay">
+        <strong>Historial</strong>
+        <span>Auditoría automática de cambios</span>
+      </div>
+      <div class="stat-card animate-float delay-more">
+        <strong>Rápido</strong>
+        <span>Subida y corrección en segundos</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <!-- DOCUMENT UPLOAD FORM -->
+    {% if not request.user.profile.is_worker and not request.user.profile.is_admin %}
+    <section class="card" id="upload">
+      <h2>Subir documento</h2>
+      <p>Comparte tu documento en PDF o imagen para que un trabajador lo revise y valide.</p>
+      <style>
+        .field-with-tip {
+          margin-bottom: 16px;
+        }
+        .field-with-tip .tip-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          cursor: pointer;
+          margin-top: 4px;
+          font-size: 0.85em;
+          color: #4338ca;
+        }
+        .field-with-tip .tip-btn:hover .tip-box {
+          display: block;
+        }
+        .tip-btn-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 18px;
+          height: 18px;
+          background: #e0e7ff;
+          color: #4338ca;
+          border-radius: 50%;
+          font-size: 11px;
+          font-weight: bold;
+          flex-shrink: 0;
+        }
+        .tip-box {
+          display: none;
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: white;
+          border: 2px solid #e5e7eb;
+          border-radius: 10px;
+          padding: 12px;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+          z-index: 9999;
+          max-width: 400px;
+          text-align: center;
+        }
+        .tip-box img {
+          max-width: 100%;
+          height: auto;
+          border-radius: 6px;
+        }
+        .tip-box p {
+          margin: 8px 0 0;
+          font-size: 0.85em;
+          color: #6b7280;
+        }
+      </style>
+      <form method="post" enctype="multipart/form-data" class="form-card">
+        {% csrf_token %}
+        <p>{{ form.credit_type.label_tag }} {{ form.credit_type }}</p>
+        <p>{{ form.nombre_completo.label_tag }} {{ form.nombre_completo }}</p>
+        <p>{{ form.domicilio.label_tag }} {{ form.domicilio }}</p>
+        <p>{{ form.telefono.label_tag }} {{ form.telefono }}</p>
+        <p>{{ form.curp.label_tag }} {{ form.curp }}</p>
+        <div class="field-with-tip">
+          <p>{{ form.curp_documento.label_tag }} {{ form.curp_documento }}</p>
+          <span class="tip-btn">
+            <span class="tip-btn-icon">?</span>
+            Ver ejemplo correcto
+            <span class="tip-box">
+              <img src="{% static 'documents/images/warnings/curp.jpeg' %}" alt="Ejemplo CURP">
+              <p>Sube una foto clara de tu documento de CURP</p>
+            </span>
+          </span>
+        </div>
+        <p>{{ form.rfc.label_tag }} {{ form.rfc }}</p>
+
+        {% for field in form %}
+          {% if field.field.widget.input_type == 'file' and field.name != 'curp_documento' %}
+            <div class="field-with-tip">
+              <p>{{ field.label_tag }} {{ field }}</p>
+              <span class="tip-btn">
+                <span class="tip-btn-icon">?</span>
+                Ver ejemplo correcto
+                <span class="tip-box">
+                  {% if field.name == 'acta_nacimiento' %}
+                    <img src="{% static 'documents/images/warnings/acta_nacimiento.jpeg' %}" alt="Ejemplo Acta de Nacimiento">
+                    <p>Sube una foto clara y completa de tu acta de nacimiento</p>
+                  {% elif field.name == 'comprobante_domicilio' %}
+                    <img src="{% static 'documents/images/warnings/comprobante_domicilio.jpeg' %}" alt="Ejemplo Comprobante">
+                    <p>Comprobante reciente (luz, agua, teléfono) a tu nombre</p>
+                  {% elif field.name == 'ine' %}
+                    <img src="{% static 'documents/images/warnings/ine.jpeg' %}" alt="Ejemplo INE">
+                    <p>Sube foto clara de ambos lados de tu INE</p>
+                  {% elif field.name == 'comprobante_bancario' %}
+                    <img src="{% static 'documents/images/warnings/comprobante_bancario.png' %}" alt="Ejemplo Bancario">
+                    <p>Estado de cuenta o comprobante de CLABE bancaria</p>
+                  {% elif field.name == 'constancia_fiscal' %}
+                    <img src="{% static 'documents/images/warnings/constancia_fiscal.jpeg' %}" alt="Ejemplo Constancia">
+                    <p>Constancia de situación fiscal actualizada del SAT</p>
+                  {% endif %}
+                </span>
+              </span>
+            </div>
+          {% endif %}
+        {% endfor %}
+        <button class="button" type="submit">Subir documento</button>
+      </form>
+    </section>
+    {% endif %}
+
+    <section class="card">
+      <h2>Mis Solicitudes</h2>
+      <div class="table-responsive" style="overflow-x: auto;">
+        <table style="font-size: 0.9em;">
+          <thead>
+            <tr style="height: 40px;">
+              <th style="padding: 8px;">Tipo de Crédito</th>
+              <th style="padding: 8px;">Estado</th>
+              <th style="padding: 8px;">Fecha</th>
+              <th style="padding: 8px;">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for document in documents %}
+              <tr style="height: 36px;">
+                <td style="padding: 6px 8px;">{{ document.get_credit_type_display }}</td>
+                <td style="padding: 6px 8px;"><span class="badge {{ document.status }}" style="font-size: 0.85em;">{{ document.get_status_display }}</span></td>
+                <td style="padding: 6px 8px; font-size: 0.85em; color: #6b7280;">{{ document.uploaded_at|date:"d/m/Y" }}</td>
+                <td style="padding: 6px 8px;">
+                  {% if document.status == "approved" and not document.clicked_continuidad %}
+                    <a href="{% url 'click_continuidad' document.pk %}" class="button" style="display: inline-block; padding: 6px 14px; font-size: 0.85em; text-decoration: none; background: linear-gradient(135deg, #10b981, #059669); color: white; border-radius: 6px; border: none;">
+                      Ver línea de crédito
+                    </a>
+                  {% elif document.clicked_continuidad %}
+                    <span style="font-size: 0.8em; color: #10b981;">✓ Proceso continuado</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" style="padding: 12px; text-align: center; color: #9ca3af;">No hay solicitudes todavía.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+
+  <section class="features-card">
+    <h2>Todo lo que necesitas</h2>
+    <div class="feature-grid">
+      <div class="feature-item">
+        <h3>Validación fluida</h3>
+        <p>Los trabajadores pueden aprobar y rechazar documentos con comentarios claros.</p>
+      </div>
+      <div class="feature-item">
+        <h3>Correcciones fáciles</h3>
+        <p>El cliente puede reenviar documentos rechazados directamente desde su detalle.</p>
+      </div>
+      <div class="feature-item">
+        <h3>Seguridad cifrada</h3>
+        <p>Los datos sensibles quedan protegidos en la base de datos con cifrado aplicado.</p>
+      </div>
+    </div>
+  </section>
+{% endblock %}

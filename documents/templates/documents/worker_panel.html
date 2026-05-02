@@ -1,0 +1,35 @@
+{% extends "documents/base.html" %}
+
+{% block title %}Panel de trabajadores{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <h2>Documentos pendientes</h2>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Cliente</th>
+            <th>Título</th>
+            <th>Subido</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for document in documents %}
+            <tr>
+              <td>{{ document.id }}</td>
+              <td>{{ document.user.username }}</td>
+              <td>{{ document.title }}</td>
+              <td>{{ document.uploaded_at|date:"d/m/Y H:i" }}</td>
+              <td><a class="button outline" href="{% url 'document_detail' document.pk %}">Revisar</a></td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5">No hay documentos pendientes.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

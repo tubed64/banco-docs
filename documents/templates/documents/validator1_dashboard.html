@@ -1,0 +1,80 @@
+{% extends "documents/base.html" %}
+
+{% block title %}Panel STAFF{% endblock %}
+
+{% block content %}
+  <section class="role-header">
+    <div class="role-badge">👤 STAFF (Revisión Inicial)</div>
+    <h1>Panel de Validación - Primera Revisión</h1>
+    <p>Revisa documentos, valida datos y aprueba o rechaza solicitudes.</p>
+  </section>
+
+  <div class="validator-stats">
+    <div class="stat">
+      <span class="label">Pendientes</span>
+      <span class="value">{{ pending_count }}</span>
+    </div>
+    <div class="stat">
+      <span class="label">En Revisión</span>
+      <span class="value">{{ reviewing_count }}</span>
+    </div>
+    <div class="stat">
+      <span class="label">Aprobados</span>
+      <span class="value">{{ approved_count }}</span>
+    </div>
+    <div class="stat">
+      <span class="label">Rechazados</span>
+      <span class="value">{{ rejected_count }}</span>
+    </div>
+  </div>
+
+  <section class="card">
+    <h2>Documentos Asignados para Validar</h2>
+    
+    {% if documents %}
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+          <thead>
+            <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+              <th style="padding: 10px 12px; text-align: left;">#</th>
+              <th style="padding: 10px 12px; text-align: left;">Cliente</th>
+              <th style="padding: 10px 12px; text-align: left;">Tipo</th>
+              <th style="padding: 10px 12px; text-align: left;">Fecha</th>
+              <th style="padding: 10px 12px; text-align: center;">Docs</th>
+              <th style="padding: 10px 12px; text-align: center;">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for document in documents %}
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 8px 12px; color: #6b7280;">#{{ document.id }}</td>
+                <td style="padding: 8px 12px;">
+                  <strong>{{ document.user.get_full_name|default:document.user.username }}</strong>
+                  {% if document.nombre_completo %}
+                    <br><small style="color: #6b7280;">{{ document.nombre_completo }}</small>
+                  {% endif %}
+                </td>
+                <td style="padding: 8px 12px;">{{ document.get_credit_type_display }}</td>
+                <td style="padding: 8px 12px; font-size: 0.85em; color: #6b7280;">{{ document.uploaded_at|date:"d/m/Y H:i" }}</td>
+                <td style="padding: 8px 12px; text-align: center;">
+                  {% if document.ine %}<span title="INE">📄</span>{% endif %}
+                  {% if document.acta_nacimiento %}<span title="Acta">📋</span>{% endif %}
+                  {% if document.comprobante_domicilio %}<span title="Domicilio">🏠</span>{% endif %}
+                  {% if document.comprobante_bancario %}<span title="Bancario">🏦</span>{% endif %}
+                  {% if document.constancia_fiscal %}<span title="Fiscal">📊</span>{% endif %}
+                </td>
+                <td style="padding: 8px 12px; text-align: center;">
+                  <a href="{% url 'validator1_review' document.id %}" class="button" style="font-size: 0.85em; padding: 6px 14px;">Revisar →</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>No hay documentos pendientes de validación en este momento.</p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

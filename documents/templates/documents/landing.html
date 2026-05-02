@@ -1,0 +1,250 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Banco de Validación de Documentos</title>
+  <link rel="stylesheet" href="{% static 'documents/css/style.css' %}" />
+  <style>
+    .landing-hero {
+      padding: 80px 0;
+      text-align: center;
+      background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(99,102,241,0.1) 100%);
+      border-radius: 28px;
+      margin-bottom: 60px;
+    }
+
+    .landing-hero h1 {
+      font-size: clamp(2.2rem, 4vw, 4rem);
+      margin: 0 0 24px;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+
+    .landing-hero p {
+      font-size: 1.1rem;
+      color: #6b7280;
+      max-width: 600px;
+      margin: 0 auto 32px;
+      line-height: 1.8;
+    }
+
+    .landing-cta {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .landing-cta .button {
+      padding: 14px 28px;
+      font-size: 1rem;
+    }
+
+    .features-section {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      margin-bottom: 60px;
+    }
+
+    .feature-card {
+      background: white;
+      padding: 32px;
+      border-radius: 20px;
+      border: 1px solid rgba(226,232,240,0.9);
+      box-shadow: 0 8px 24px rgba(15,23,42,0.06);
+      transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(15,23,42,0.1);
+    }
+
+    .feature-card .icon {
+      font-size: 2.5em;
+      margin-bottom: 16px;
+    }
+
+    .feature-card h3 {
+      margin: 0 0 12px;
+      font-size: 1.3rem;
+      color: #111827;
+    }
+
+    .feature-card p {
+      margin: 0;
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #d1d5db, transparent);
+      margin: 60px 0;
+    }
+
+    .roles-section {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      margin-bottom: 40px;
+    }
+
+    .role-card {
+      background: white;
+      padding: 28px;
+      border-radius: 16px;
+      border: 2px solid rgba(226,232,240,0.9);
+      text-align: center;
+    }
+
+    .role-card .icon {
+      font-size: 3em;
+      margin-bottom: 16px;
+    }
+
+    .role-card h3 {
+      margin: 0 0 12px;
+      color: #111827;
+    }
+
+    .role-card p {
+      color: #6b7280;
+      margin: 0 0 20px;
+      font-size: 0.95em;
+    }
+
+    .role-card .button {
+      width: 100%;
+    }
+
+    footer {
+      background: #f8fafc;
+      padding: 40px 0 20px;
+      border-top: 1px solid rgba(226,232,240,0.9);
+      text-align: center;
+      color: #6b7280;
+      margin-top: 60px;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <a href="#">🏦 Banco Docs</a>
+      </div>
+      <nav class="nav-links">
+        <a href="#features">Características</a>
+        <a href="#roles" style="color: white;">Acceso</a>
+        <a class="button outline" href="{% url 'login' %}">Ingresar</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Hero Section -->
+    <section class="landing-hero">
+      <h1>Sistema de Validación Bancaria de Documentos</h1>
+      <p>Plataforma segura para validación de solicitudes de crédito con auditoría automática y cifrado de datos sensibles.</p>
+      <div class="landing-cta">
+        <a href="#roles" class="button" style="padding: 14px 32px; font-size: 1.05rem;">
+          ✨ Comenzar
+        </a>
+        <a href="{% url 'login' %}" class="button outline" style="padding: 14px 32px; font-size: 1.05rem;">
+          🔐 Ya tengo cuenta
+        </a>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" style="margin-bottom: 60px;">
+      <h2 style="text-align: center; margin-bottom: 40px; font-size: 2rem;">¿Por qué elegirnos?</h2>
+      <div class="features-section">
+        <div class="feature-card">
+          <div class="icon">🔒</div>
+          <h3>Seguridad Cifrada</h3>
+          <p>Todos los datos sensibles están protegidos con cifrado Fernet. Tu información está segura.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">✓✓</div>
+          <h3>Validación de 2 Niveles</h3>
+          <p>Los documentos pasan por STAFF y SENIOR antes de ser aprobados.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">📊</div>
+          <h3>Auditoría Completa</h3>
+          <p>Cada cambio queda registrado. Transparencia total en el proceso de validación.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">⚡</div>
+          <h3>Rápido y Eficiente</h3>
+          <p>Validación automática de formatos CURP/RFC. Recibe resultados en horas.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">📧</div>
+          <h3>Notificaciones por Email</h3>
+          <p>Recibe actualizaciones automáticas sobre el estado de tu solicitud.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">🔄</div>
+          <h3>Exportación a ERP</h3>
+          <p>Los datos aprobados se exportan automáticamente al sistema ERP.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Roles Section -->
+    <section id="roles" style="margin-bottom: 60px;">
+      <h2 style="text-align: center; margin-bottom: 40px; font-size: 2rem;">¿Listo para comenzar?</h2>
+      <div class="roles-section" style="max-width: 400px; margin: 0 auto;">
+        <div class="role-card">
+          <div class="icon">👤</div>
+          <h3>Soy Cliente</h3>
+          <p>Quiero enviar documentos para validación y recibir resultados de mi solicitud de crédito.</p>
+          <a href="{% url 'register' %}" class="button" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+            Crear Cuenta
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Info Section -->
+    <section style="background: linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(99,102,241,0.05) 100%); padding: 40px; border-radius: 16px; border: 1px solid rgba(59,130,246,0.2);">
+      <h2 style="margin-top: 0; color: #2563eb;">📋 Proceso de Validación</h2>
+      <div style="display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-top: 24px;">
+        <div>
+          <strong style="color: #2563eb;">1. Registro y Envío</strong>
+          <p style="color: #6b7280; margin: 8px 0 0;">Crea tu cuenta y envía documentos (PDF/Imagen) para validación.</p>
+        </div>
+        <div>
+          <strong style="color: #2563eb;">2. Validación Nivel 1</strong>
+          <p style="color: #6b7280; margin: 8px 0 0;">El STAFF revisa y valida CURP/RFC. Si aprueba, pasa a SENIOR.</p>
+        </div>
+        <div>
+          <strong style="color: #2563eb;">3. Validación Nivel 2</strong>
+          <p style="color: #6b7280; margin: 8px 0 0;">El SENIOR confirma. Si aprueba, se exporta a ERP automáticamente.</p>
+        </div>
+        <div>
+          <strong style="color: #2563eb;">4. Resultado Final</strong>
+          <p style="color: #6b7280; margin: 8px 0 0;">Recibirás un email con el resultado (aprobado/rechazado).</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p style="margin-bottom: 8px;">🏦 Sistema de Validación Bancaria de Documentos</p>
+      <span style="font-size: 0.9em;">© 2026 Banco Validación. Todos los derechos reservados.</span>
+    </div>
+  </footer>
+</body>
+</html>

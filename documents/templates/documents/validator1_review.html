@@ -1,0 +1,861 @@
+{% extends "documents/base.html" %}
+
+{% block title %}Revisar Documento - STAFF{% endblock %}
+
+{% block content %}
+  <div class="role-header">
+    <span class="role-badge" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">📋 STAFF (Revisión)</span>
+    <h1>Revisión Inicial de Solicitud</h1>
+    <p>Analiza los datos y validaciones automáticas para aprobar o rechazar</p>
+  </div>
+
+
+  <!-- CLIENT STATUS ALERT -->
+  {% if client_info %}
+    <div class="card" style="margin-top: 24px; border-left: 5px solid {{ client_info.color }}; background: {% if client_info.type == 'new' %}#f0f9ff{% elif client_info.type == 'old_match' %}#f0fdf4{% else %}#fef2f2{% endif %};">
+      <div style="display: flex; gap: 16px; align-items: flex-start;">
+        <div style="font-size: 2em;">
+          {% if client_info.type == 'new' %}🆕{% elif client_info.type == 'old_match' %}✓{% else %}⚠️{% endif %}
+        </div>
+        <div style="flex: 1;">
+          <h2 style="margin: 0 0 8px; color: {{ client_info.color }};">{{ client_info.label }}</h2>
+          <p style="margin: 0 0 8px; color: #4b5563;">{{ client_info.alert }}</p>
+          
+          {% if client_info.issues %}
+            <div style="padding: 12px; background: white; border-radius: 6px; margin: 8px 0; border-left: 3px solid #dc2626;">
+              <strong style="color: #7f1d1d; display: block; margin-bottom: 6px;">❌ Problemas detectados:</strong>
+              {% for issue in client_info.issues %}
+                <div style="color: #991b1b; font-size: 0.9em;">• {{ issue }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+          
+          <p style="margin: 8px 0 0; padding: 10px; background: white; border-radius: 6px; border-left: 3px solid {{ client_info.color }}; font-weight: 600; color: #374151; font-size: 0.95em;">
+            💡 {{ client_info.recommendation }}
+          </p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- AI VALIDATION RESULTS -->
+  {% if ai_validation and ai_validation.success %}
+    <div class="card" style="margin-top: 24px; border-left: 5px solid {% if ai_validation.can_auto_approve %}#16a34a{% elif ai_validation.overall_score >= 60 %}#f59e0b{% else %}#dc2626{% endif %};">
+      <h2 style="margin-top: 0;">🤖 Análisis Automático Inteligente</h2>
+      
+      <!-- Score Bar -->
+      <div style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-weight: 600;">Puntuación General</span>
+          <span style="font-size: 1.3em; font-weight: bold; color: {% if ai_validation.overall_score >= 85 %}#16a34a{% elif ai_validation.overall_score >= 60 %}#f59e0b{% else %}#dc2626{% endif %};">
+            {{ ai_validation.overall_score|floatformat:0 }}%
+          </span>
+        </div>
+        <div style="background: #e5e7eb; border-radius: 8px; height: 12px; overflow: hidden;">
+          <div style="background: {% if ai_validation.overall_score >= 85 %}linear-gradient(135deg, #16a34a 0%, #15803d 100%){% elif ai_validation.overall_score >= 60 %}linear-gradient(135deg, #f59e0b 0%, #d97706 100%){% else %}linear-gradient(135deg, #dc2626 0%, #b91c1c 100%){% endif %}; width: {{ ai_validation.overall_score }}%; height: 100%; transition: width 0.3s ease;"></div>
+        </div>
+      </div>
+
+      <!-- Recommendation Badge -->
+      <div style="padding: 16px; background: {% if ai_validation.can_auto_approve %}linear-gradient(135deg, rgba(22,163,74,0.1), rgba(21,128,61,0.1)){% elif ai_validation.overall_score >= 60 %}linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.1)){% else %}linear-gradient(135deg, rgba(220,38,38,0.1), rgba(185,28,28,0.1)){% endif %}; border-radius: 12px; border: 1px solid {% if ai_validation.can_auto_approve %}rgba(22,163,74,0.3){% elif ai_validation.overall_score >= 60 %}rgba(245,158,11,0.3){% else %}rgba(220,38,38,0.3){% endif %}; margin-bottom: 16px;">
+        <strong style="color: {% if ai_validation.can_auto_approve %}#15803d{% elif ai_validation.overall_score >= 60 %}#92400e{% else %}#7f1d1d{% endif %};">
+          {% if ai_validation.can_auto_approve %}
+            ✅ PUEDE APROBARSE AUTOMÁTICAMENTE
+          {% elif ai_validation.overall_score >= 60 %}
+            ⚠️ REVISAR CUIDADOSAMENTE
+          {% else %}
+            ❌ SE RECOMIENDA RECHAZAR
+          {% endif %}
+        </strong>
+        <p style="margin: 8px 0 0; color: {% if ai_validation.can_auto_approve %}#166534{% elif ai_validation.overall_score >= 60 %}#78350f{% else %}#831843{% endif %}; font-size: 0.95em;">
+          {{ ai_validation.recommendation }}
+        </p>
+      </div>
+
+      <!-- OCR Confidence -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
+        <div style="padding: 12px; background: #f3f4f6; border-radius: 8px;">
+          <div style="font-size: 0.9em; color: #6b7280; margin-bottom: 4px;">Confianza OCR</div>
+          <div style="font-size: 1.4em; font-weight: bold; color: #2563eb;">{{ ai_validation.ocr_confidence|floatformat:0 }}%</div>
+        </div>
+      </div>
+
+      <!-- Validations Grid -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px;">
+        <!-- CURP Validation -->
+        <div style="padding: 16px; background: {% if ai_validation.curp_valid %}#f0fdf4{% else %}#fef2f2{% endif %}; border-radius: 8px; border: 1px solid {% if ai_validation.curp_valid %}#bbf7d0{% else %}#fecaca{% endif %};">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span style="font-size: 1.2em;">{% if ai_validation.curp_valid %}✅{% else %}❌{% endif %}</span>
+            <strong style="color: {% if ai_validation.curp_valid %}#15803d{% else %}#7f1d1d{% endif %};">CURP</strong>
+          </div>
+          {% if ai_validation.curp_valid %}
+            <div style="font-size: 0.85em; color: #166534;">
+              <div><strong>Válido:</strong> {{ ai_validation.curp_data.curp }}</div>
+              <div><strong>Fecha Nacimiento:</strong> {{ ai_validation.curp_data.date_of_birth }}</div>
+            </div>
+          {% else %}
+            <div style="font-size: 0.85em; color: #991b1b;">
+              {% if ai_validation.curp_data.issues %}
+                {% for issue in ai_validation.curp_data.issues %}
+                  <div>• {{ issue }}</div>
+                {% endfor %}
+              {% else %}
+                <div>No se detectó CURP válido en el documento</div>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- RFC Validation -->
+        <div style="padding: 16px; background: {% if ai_validation.rfc_valid %}#f0fdf4{% else %}#fef2f2{% endif %}; border-radius: 8px; border: 1px solid {% if ai_validation.rfc_valid %}#bbf7d0{% else %}#fecaca{% endif %};">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span style="font-size: 1.2em;">{% if ai_validation.rfc_valid %}✅{% else %}❌{% endif %}</span>
+            <strong style="color: {% if ai_validation.rfc_valid %}#15803d{% else %}#7f1d1d{% endif %};">RFC</strong>
+          </div>
+          {% if ai_validation.rfc_valid %}
+            <div style="font-size: 0.85em; color: #166534;">
+              <div><strong>Válido:</strong> {{ ai_validation.rfc_data.rfc }}</div>
+              <div><strong>Fecha Nacimiento:</strong> {{ ai_validation.rfc_data.date_of_birth }}</div>
+            </div>
+          {% else %}
+            <div style="font-size: 0.85em; color: #991b1b;">
+              {% if ai_validation.rfc_data.issues %}
+                {% for issue in ai_validation.rfc_data.issues %}
+                  <div>• {{ issue }}</div>
+                {% endfor %}
+              {% else %}
+                <div>No se detectó RFC válido en el documento</div>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Data Consistency -->
+        <div style="padding: 16px; background: {% if ai_validation.data_consistent %}#f0fdf4{% else %}#fef2f2{% endif %}; border-radius: 8px; border: 1px solid {% if ai_validation.data_consistent %}#bbf7d0{% else %}#fecaca{% endif %};">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span style="font-size: 1.2em;">{% if ai_validation.data_consistent %}✅{% else %}❌{% endif %}</span>
+            <strong style="color: {% if ai_validation.data_consistent %}#15803d{% else %}#7f1d1d{% endif %};">Consistencia de Datos</strong>
+          </div>
+          <div style="font-size: 0.85em; color: {% if ai_validation.data_consistent %}#166534{% else %}#991b1b{% endif %};">
+            {% if ai_validation.data_consistent %}
+              <div>Todos los datos coinciden ✓</div>
+            {% else %}
+              <div>Inconsistencias encontradas:</div>
+              {% if ai_validation.ai_result.data_consistency.issues %}
+                {% for issue in ai_validation.ai_result.data_consistency.issues %}
+                  <div style="margin-top: 4px;">• {{ issue }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Extracted Fields -->
+      {% if ai_validation.extracted_fields %}
+        <div style="margin-top: 16px; padding: 16px; background: linear-gradient(135deg, #f0f9ff 0%, #f0fdfa 100%); border-radius: 8px; border: 1px solid #a7f3d0;">
+          <strong style="display: block; margin-bottom: 12px; font-size: 1.1em; color: #065f46;">📊 Datos Extraídos por IA del Documento</strong>
+          
+          <!-- Grid de campos -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; font-size: 0.9em;">
+            
+            <!-- CURP -->
+            {% if ai_validation.extracted_fields.curp %}
+              <div style="padding: 10px; background: white; border-radius: 6px; border-left: 3px solid #3b82f6;">
+                <div style="color: #6b7280; font-size: 0.85em; margin-bottom: 4px;">🆔 CURP</div>
+                <div style="font-weight: 600; color: #1f2937;">
+                  {% for curp in ai_validation.extracted_fields.curp %}
+                    <div>{{ curp }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+            
+            <!-- RFC -->
+            {% if ai_validation.extracted_fields.rfc %}
+              <div style="padding: 10px; background: white; border-radius: 6px; border-left: 3px solid #3b82f6;">
+                <div style="color: #6b7280; font-size: 0.85em; margin-bottom: 4px;">🏛️ RFC</div>
+                <div style="font-weight: 600; color: #1f2937;">
+                  {% for rfc in ai_validation.extracted_fields.rfc %}
+                    <div>{{ rfc }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+            
+            <!-- Nombres -->
+            {% if ai_validation.extracted_fields.names %}
+              <div style="padding: 10px; background: white; border-radius: 6px; border-left: 3px solid #10b981;">
+                <div style="color: #6b7280; font-size: 0.85em; margin-bottom: 4px;">👤 Nombres</div>
+                <div style="font-weight: 600; color: #1f2937;">
+                  {% for name in ai_validation.extracted_fields.names %}
+                    <div>{{ name }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+            
+            <!-- Teléfonos -->
+            {% if ai_validation.extracted_fields.phone %}
+              <div style="padding: 10px; background: white; border-radius: 6px; border-left: 3px solid #f59e0b;">
+                <div style="color: #6b7280; font-size: 0.85em; margin-bottom: 4px;">📞 Teléfono</div>
+                <div style="font-weight: 600; color: #1f2937;">
+                  {% for phone in ai_validation.extracted_fields.phone %}
+                    <div>{{ phone }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+            
+            <!-- Emails -->
+            {% if ai_validation.extracted_fields.email %}
+              <div style="padding: 10px; background: white; border-radius: 6px; border-left: 3px solid #8b5cf6;">
+                <div style="color: #6b7280; font-size: 0.85em; margin-bottom: 4px;">📧 Email</div>
+                <div style="font-weight: 600; color: #1f2937;">
+                  {% for email in ai_validation.extracted_fields.email %}
+                    <div>{{ email }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+            
+            <!-- Ocupación -->
+            {% if ai_validation.extracted_fields.ocupation %}
+              <div style="padding: 10px; background: white; border-radius: 6px; border-left: 3px solid #ec4899;">
+                <div style="color: #6b7280; font-size: 0.85em; margin-bottom: 4px;">💼 Ocupación</div>
+                <div style="font-weight: 600; color: #1f2937;">
+                  {% for occ in ai_validation.extracted_fields.ocupation %}
+                    <div>{{ occ }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+            
+            <!-- Estado Civil -->
+            {% if ai_validation.extracted_fields.marital_status %}
+              <div style="padding: 10px; background: white; border-radius: 6px; border-left: 3px solid #06b6d4;">
+                <div style="color: #6b7280; font-size: 0.85em; margin-bottom: 4px;">💑 Estado Civil</div>
+                <div style="font-weight: 600; color: #1f2937;">
+                  {% for status in ai_validation.extracted_fields.marital_status %}
+                    <div>{{ status }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+            
+            <!-- Fechas -->
+            {% if ai_validation.extracted_fields.dates %}
+              <div style="padding: 10px; background: white; border-radius: 6px; border-left: 3px solid #6366f1;">
+                <div style="color: #6b7280; font-size: 0.85em; margin-bottom: 4px;">📅 Fechas</div>
+                <div style="font-weight: 600; color: #1f2937;">
+                  {% for date in ai_validation.extracted_fields.dates %}
+                    <div>{{ date }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+          </div>
+          
+          <!-- Direcciones (full width) -->
+          {% if ai_validation.extracted_fields.addresses %}
+            <div style="margin-top: 12px; padding: 10px; background: white; border-radius: 6px; border-left: 3px solid #14b8a6;">
+              <div style="color: #6b7280; font-size: 0.85em; margin-bottom: 4px;">🏘️ Direcciones</div>
+              <div style="font-weight: 600; color: #1f2937;">
+                {% for addr in ai_validation.extracted_fields.addresses %}
+                  <div style="margin-bottom: 6px;">{{ addr }}</div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+          
+          <div style="margin-top: 10px; padding: 8px; background: rgba(16,185,129,0.1); border-radius: 6px; font-size: 0.85em; color: #047857;">
+            💡 <strong>Tip:</strong> Revisa estos datos extraídos para verificar su precisión antes de aprobar el documento.
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Errors/Warnings -->
+      {% if ai_validation.errors %}
+        <div style="margin-top: 16px; padding: 12px; background: #fef2f2; border-radius: 8px; border: 1px solid #fecaca;">
+          <strong style="display: block; margin-bottom: 8px; color: #7f1d1d;">⚠️ Problemas Detectados:</strong>
+          <div style="font-size: 0.9em; color: #991b1b;">
+            {% for error in ai_validation.errors %}
+              <div>• {{ error }}</div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  {% elif ai_validation and not ai_validation.success %}
+    <div class="card" style="margin-top: 24px; background: #fef2f2; border: 1px solid #fecaca;">
+      <div style="display: flex; gap: 12px;">
+        <span style="font-size: 1.5em;">⚠️</span>
+        <div>
+          <strong style="color: #7f1d1d;">Error en Análisis Automático</strong>
+          <p style="margin: 8px 0 0; color: #991b1b; font-size: 0.95em;">
+            {{ ai_validation.error }}
+          </p>
+          <p style="margin: 8px 0 0; color: #b91c1c; font-size: 0.85em;">
+            Procede con validación manual del documento.
+          </p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- DOCUMENT VIEWER -->
+  <div class="card" style="margin-top: 24px;">
+    <h2 style="margin-top: 0;">📄 Documentos Adjuntos</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+      
+      <!-- Documento Principal -->
+      {% if document.file %}
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: white; display: flex; flex-direction: column; height: 100%;">
+          <div style="background: #f3f4f6; padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">
+            <p style="margin: 0; font-weight: 600; color: #111827; font-size: 0.9em;">📎 Documento Principal</p>
+          </div>
+          
+          <div style="flex: 1; height: 160px; display: flex; justify-content: center; align-items: center; background: #f9fafb; padding: 12px; overflow: hidden;">
+            {% if file_types.file == 'pdf' %}
+              <embed 
+                src="{{ document.file.url }}" 
+                type="application/pdf" 
+                width="100%" 
+                height="100%"
+                style="border: none;"
+              />
+            {% elif file_types.file == 'image' %}
+              <img 
+                src="{{ document.file.url }}" 
+                alt="Documento" 
+                style="max-width: 100%; max-height: 100%; object-fit: contain;"
+              />
+            {% else %}
+              <div style="text-align: center; color: #6b7280;">
+                <p style="margin: 0; font-size: 2em;">📎</p>
+                <p style="margin: 4px 0 0; font-size: 0.85em;">{{ document.file.name|truncatewords:2 }}</p>
+              </div>
+            {% endif %}
+          </div>
+          
+          <div style="padding: 8px; border-top: 1px solid #e5e7eb; display: flex; gap: 4px; justify-content: center;">
+            <a href="{{ document.file.url }}" target="_blank" class="button outline" style="padding: 6px 10px; font-size: 0.8em; flex: 1; text-align: center;">🔍</a>
+            <a href="{{ document.file.url }}" download class="button outline" style="padding: 6px 10px; font-size: 0.8em; flex: 1; text-align: center;">⬇️</a>
+          </div>
+        </div>
+      {% endif %}
+      
+      <!-- Acta de Nacimiento -->
+      {% if document.acta_nacimiento %}
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: white; display: flex; flex-direction: column; height: 100%;">
+          <div style="background: #f3f4f6; padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">
+            <p style="margin: 0; font-weight: 600; color: #111827; font-size: 0.9em;">🎂 Acta Nacimiento</p>
+          </div>
+          
+          <div style="flex: 1; height: 160px; display: flex; justify-content: center; align-items: center; background: #f9fafb; padding: 12px; overflow: hidden;">
+            {% if file_types.acta_nacimiento == 'pdf' %}
+              <embed 
+                src="{{ document.acta_nacimiento.url }}" 
+                type="application/pdf" 
+                width="100%" 
+                height="100%"
+                style="border: none;"
+              />
+            {% elif file_types.acta_nacimiento == 'image' %}
+              <img 
+                src="{{ document.acta_nacimiento.url }}" 
+                alt="Acta" 
+                style="max-width: 100%; max-height: 100%; object-fit: contain;"
+              />
+            {% else %}
+              <div style="text-align: center; color: #6b7280;">
+                <p style="margin: 0; font-size: 2em;">📄</p>
+              </div>
+            {% endif %}
+          </div>
+          
+          <div style="padding: 8px; border-top: 1px solid #e5e7eb; display: flex; gap: 4px; justify-content: center;">
+            <a href="{{ document.acta_nacimiento.url }}" target="_blank" class="button outline" style="padding: 6px 10px; font-size: 0.8em; flex: 1; text-align: center;">🔍</a>
+            <a href="{{ document.acta_nacimiento.url }}" download class="button outline" style="padding: 6px 10px; font-size: 0.8em; flex: 1; text-align: center;">⬇️</a>
+          </div>
+        </div>
+      {% endif %}
+      
+      <!-- Comprobante de Domicilio -->
+      {% if document.comprobante_domicilio %}
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: white; display: flex; flex-direction: column; height: 100%;">
+          <div style="background: #f3f4f6; padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">
+            <p style="margin: 0; font-weight: 600; color: #111827; font-size: 0.9em;">🏠 Comprobante Domicilio</p>
+          </div>
+          
+          <div style="flex: 1; height: 160px; display: flex; justify-content: center; align-items: center; background: #f9fafb; padding: 12px; overflow: hidden;">
+            {% if file_types.comprobante_domicilio == 'pdf' %}
+              <embed 
+                src="{{ document.comprobante_domicilio.url }}" 
+                type="application/pdf" 
+                width="100%" 
+                height="100%"
+                style="border: none;"
+              />
+            {% elif file_types.comprobante_domicilio == 'image' %}
+              <img 
+                src="{{ document.comprobante_domicilio.url }}" 
+                alt="Comprobante" 
+                style="max-width: 100%; max-height: 100%; object-fit: contain;"
+              />
+            {% else %}
+              <div style="text-align: center; color: #6b7280;">
+                <p style="margin: 0; font-size: 2em;">📄</p>
+              </div>
+            {% endif %}
+          </div>
+          
+          <div style="padding: 8px; border-top: 1px solid #e5e7eb; display: flex; gap: 4px; justify-content: center;">
+            <a href="{{ document.comprobante_domicilio.url }}" target="_blank" class="button outline" style="padding: 6px 10px; font-size: 0.8em; flex: 1; text-align: center;">🔍</a>
+            <a href="{{ document.comprobante_domicilio.url }}" download class="button outline" style="padding: 6px 10px; font-size: 0.8em; flex: 1; text-align: center;">⬇️</a>
+          </div>
+        </div>
+      {% endif %}
+      
+      <!-- INE -->
+      {% if document.ine %}
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: white; display: flex; flex-direction: column; height: 100%;">
+          <div style="background: #f3f4f6; padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">
+            <p style="margin: 0; font-weight: 600; color: #111827; font-size: 0.9em;">🪪 INE</p>
+          </div>
+          
+          <div style="flex: 1; height: 160px; display: flex; justify-content: center; align-items: center; background: #f9fafb; padding: 12px; overflow: hidden;">
+            {% if file_types.ine == 'pdf' %}
+              <embed 
+                src="{{ document.ine.url }}" 
+                type="application/pdf" 
+                width="100%" 
+                height="100%"
+                style="border: none;"
+              />
+            {% elif file_types.ine == 'image' %}
+              <img 
+                src="{{ document.ine.url }}" 
+                alt="INE" 
+                style="max-width: 100%; max-height: 100%; object-fit: contain;"
+              />
+            {% else %}
+              <div style="text-align: center; color: #6b7280;">
+                <p style="margin: 0; font-size: 2em;">📄</p>
+              </div>
+            {% endif %}
+          </div>
+          
+          <div style="padding: 8px; border-top: 1px solid #e5e7eb; display: flex; gap: 4px; justify-content: center;">
+            <a href="{{ document.ine.url }}" target="_blank" class="button outline" style="padding: 6px 10px; font-size: 0.8em; flex: 1; text-align: center;">🔍</a>
+            <a href="{{ document.ine.url }}" download class="button outline" style="padding: 6px 10px; font-size: 0.8em; flex: 1; text-align: center;">⬇️</a>
+          </div>
+        </div>
+      {% endif %}
+      
+      <!-- CURP Documento -->
+      {% if document.curp_documento %}
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: white; display: flex; flex-direction: column; height: 100%;">
+          <div style="background: #f3f4f6; padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">
+            <p style="margin: 0; font-weight: 600; color: #111827; font-size: 0.9em;">🆔 CURP Documento</p>
+          </div>
+           
+          <div style="flex: 1; height: 160px; display: flex; justify-content: center; align-items: center; background: #f9fafb; padding: 12px; overflow: hidden;">
+            {% if file_types.curp_documento == 'pdf' %}
+              <embed 
+                src="{{ document.curp_documento.url }}" 
+                type="application/pdf" 
+                width="100%" 
+                height="100%"
+                style="border: none;"
+              />
+            {% elif file_types.curp_documento == 'image' %}
+              <img 
+                src="{{ document.curp_documento.url }}" 
+                alt="CURP" 
+                style="max-width: 100%; max-height: 100%; object-fit: contain;"
+              />
+            {% else %}
+              <div style="text-align: center; color: #6b7280;">
+                <p style="margin: 0; font-size: 2em;">📄</p>
+              </div>
+            {% endif %}
+          </div>
+           
+          <div style="padding: 8px; border-top: 1px solid #e5e7eb; display: flex; gap: 4px; justify-content: center;">
+            <a href="{{ document.curp_documento.url }}" target="_blank" class="button outline" style="padding: 6px 10px; font-size: 0.8em; flex: 1; text-align: center;">🔍</a>
+            <a href="{{ document.curp_documento.url }}" download class="button outline" style="padding: 6px 10px; font-size: 0.8em; flex: 1; text-align: center;">⬇️</a>
+          </div>
+        </div>
+      {% endif %}
+      
+      <!-- Comprobante Bancario -->
+      {% if document.comprobante_bancario %}
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: white; display: flex; flex-direction: column; height: 100%;">
+          <div style="background: #f3f4f6; padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">
+            <p style="margin: 0; font-weight: 600; color: #111827; font-size: 0.9em;">🏦 Comprobante Bancario</p>
+          </div>
+          
+          <div style="flex: 1; height: 160px; display: flex; justify-content: center; align-items: center; background: #f9fafb; padding: 12px; overflow: hidden;">
+            {% if file_types.comprobante_bancario == 'pdf' %}
+              <embed 
+                src="{{ document.comprobante_bancario.url }}" 
+                type="application/pdf" 
+                width="100%" 
+                height="100%"
+                style="border: none;"
+              />
+            {% elif file_types.comprobante_bancario == 'image' %}
+              <img 
+                src="{{ document.comprobante_bancario.url }}" 
+                alt="Comprobante Bancario" 
+                style="max-width: 100%; max-height: 100%; object-fit: contain;"
+              />
+            {% else %}
+              <div style="text-align: center; color: #6b7280;">
+                <p style="margin: 0; font-size: 2em;">📄</p>
+              </div>
+            {% endif %}
+          </div>
+          
+          <div style="padding: 8px; border-top: 1px solid #e5e7eb; display: flex; gap: 4px; justify-content: center;">
+            <a href="{{ document.comprobante_bancario.url }}" target="_blank" class="button outline" style="padding: 6px 10px; font-size: 0.8em; flex: 1; text-align: center;">🔍</a>
+            <a href="{{ document.comprobante_bancario.url }}" download class="button outline" style="padding: 6px 10px; font-size: 0.8em; flex: 1; text-align: center;">⬇️</a>
+          </div>
+        </div>
+      {% endif %}
+      
+      <!-- Constancia Fiscal -->
+      {% if document.constancia_fiscal %}
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: white; display: flex; flex-direction: column; height: 100%;">
+          <div style="background: #f3f4f6; padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">
+            <p style="margin: 0; font-weight: 600; color: #111827; font-size: 0.9em;">📋 Constancia Fiscal</p>
+          </div>
+          
+          <div style="flex: 1; height: 160px; display: flex; justify-content: center; align-items: center; background: #f9fafb; padding: 12px; overflow: hidden;">
+            {% if file_types.constancia_fiscal == 'pdf' %}
+              <embed 
+                src="{{ document.constancia_fiscal.url }}" 
+                type="application/pdf" 
+                width="100%" 
+                height="100%"
+                style="border: none;"
+              />
+            {% elif file_types.constancia_fiscal == 'image' %}
+              <img 
+                src="{{ document.constancia_fiscal.url }}" 
+                alt="Constancia Fiscal" 
+                style="max-width: 100%; max-height: 100%; object-fit: contain;"
+              />
+            {% else %}
+              <div style="text-align: center; color: #6b7280;">
+                <p style="margin: 0; font-size: 2em;">📄</p>
+              </div>
+            {% endif %}
+          </div>
+          
+          <div style="padding: 8px; border-top: 1px solid #e5e7eb; display: flex; gap: 4px; justify-content: center;">
+            <a href="{{ document.constancia_fiscal.url }}" target="_blank" class="button outline" style="padding: 6px 10px; font-size: 0.8em; flex: 1; text-align: center;">🔍</a>
+            <a href="{{ document.constancia_fiscal.url }}" download class="button outline" style="padding: 6px 10px; font-size: 0.8em; flex: 1; text-align: center;">⬇️</a>
+          </div>
+        </div>
+      {% endif %}
+      
+    </div>
+    
+    {% if not document.file and not document.acta_nacimiento and not document.comprobante_domicilio and not document.ine and not document.comprobante_bancario and not document.constancia_fiscal %}
+      <div style="padding: 32px; text-align: center; background: #f3f4f6; border-radius: 8px;">
+        <p style="color: #6b7280; margin: 0;">No hay documentos para visualizar</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- DOCUMENT DETAILS -->
+  <div class="card" style="margin-top: 24px;">
+    <h2 style="margin-top: 0;">� Datos del Cliente</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+      <div>
+        <label style="font-weight: 600; color: #6b7280;">Cliente</label>
+        <p style="margin: 8px 0; font-size: 1.05em;">{{ document.user.get_full_name|default:document.user.username }}</p>
+      </div>
+      
+      <div>
+        <label style="font-weight: 600; color: #6b7280;">Email</label>
+        <p style="margin: 8px 0; font-size: 1.05em;">{{ document.user.email }}</p>
+      </div>
+      
+      <div>
+        <label style="font-weight: 600; color: #6b7280;">Tipo de Crédito</label>
+        <p style="margin: 8px 0; font-size: 1.05em;">{{ document.get_credit_type_display }}</p>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 16px;">
+      <div>
+        <label style="font-weight: 600; color: #6b7280;">Nombre</label>
+        <p style="margin: 8px 0;">{{ document.nombre_completo }}</p>
+      </div>
+      
+      <div>
+        <label style="font-weight: 600; color: #6b7280;">CURP</label>
+        <p style="margin: 8px 0; font-family: monospace; font-size: 1.05em;">{{ document.curp }}</p>
+      </div>
+      
+      <div>
+        <label style="font-weight: 600; color: #6b7280;">RFC</label>
+        <p style="margin: 8px 0; font-family: monospace; font-size: 1.05em;">{{ document.rfc }}</p>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 16px;">
+      <div>
+        <label style="font-weight: 600; color: #6b7280;">Teléfono</label>
+        <p style="margin: 8px 0;">{{ document.telefono }}</p>
+      </div>
+      
+      <div>
+        <label style="font-weight: 600; color: #6b7280;">Domicilio</label>
+        <p style="margin: 8px 0;">{{ document.domicilio }}</p>
+      </div>
+      
+      <div>
+        <label style="font-weight: 600; color: #6b7280;">Estado</label>
+        <p style="margin: 8px 0;">{{ document.state_of_residence }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTS UPLOADED -->
+  {% if document.documento_scaneado or document.ine_document or document.passport %}
+    <div class="card" style="margin-top: 24px;">
+      <h2 style="margin-top: 0;">📄 Documentos</h2>
+      <div style="display: grid; gap: 12px;">
+        {% if document.documento_scaneado %}
+          <div style="padding: 12px; background: #f3f4f6; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <span>📄 Documento Scaneado</span>
+            <a href="{{ document.documento_scaneado.url }}" target="_blank" class="button outline" style="padding: 8px 12px; font-size: 0.9em;">Ver</a>
+          </div>
+        {% endif %}
+        
+        {% if document.ine_document %}
+          <div style="padding: 12px; background: #f3f4f6; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <span>🪪 INE</span>
+            <a href="{{ document.ine_document.url }}" target="_blank" class="button outline" style="padding: 8px 12px; font-size: 0.9em;">Ver</a>
+          </div>
+        {% endif %}
+        
+        {% if document.passport %}
+          <div style="padding: 12px; background: #f3f4f6; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <span>🛂 Pasaporte</span>
+            <a href="{{ document.passport.url }}" target="_blank" class="button outline" style="padding: 8px 12px; font-size: 0.9em;">Ver</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- REVIEW FORM -->
+  <div class="card" style="margin-top: 24px; background: linear-gradient(135deg, rgba(59,130,246,0.02) 0%, rgba(99,102,241,0.02) 100%); border: 2px solid rgba(59,130,246,0.2);">
+    <h2 style="margin-top: 0;">✓ Decisión de Validación</h2>
+    
+    <form method="post" id="mainForm" style="display: grid; gap: 16px;">
+      {% csrf_token %}
+      
+      <div>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Comentarios</label>
+        <textarea 
+          name="comment" 
+          placeholder="Notas sobre la validación..."
+          style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-family: inherit; resize: vertical; min-height: 100px;"
+        ></textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <!-- Approve Button -->
+        <button 
+          type="button" 
+          onclick="showApproveModal()"
+          class="button"
+          style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); padding: 12px 16px; font-weight: 600; cursor: pointer;"
+        >
+          ✓ Aprobar Documento
+        </button>
+
+        <!-- Reject Button -->
+        <button 
+          type="button"
+          onclick="showRejectModal()"
+          class="button"
+          style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 12px 16px; font-weight: 600; cursor: pointer;"
+        >
+          ✗ Rechazar Documento
+        </button>
+      </div>
+    </form>
+
+    <!-- APPROVE CONFIRMATION MODAL -->
+    <div id="approveModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+      <div style="background: white; padding: 32px; border-radius: 12px; max-width: 500px; box-shadow: 0 20px 25px rgba(0,0,0,0.15); margin: 20px;">
+        <h2 style="margin-top: 0; color: #16a34a;">✓ Confirmar Aprobación</h2>
+        
+        <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; border-left: 4px solid #16a34a; margin: 16px 0;">
+          <p style="margin: 0; color: #166534;">
+            <strong>¿Estás seguro de que deseas aprobar este documento?</strong>
+          </p>
+          <p style="margin: 8px 0 0; color: #166534; font-size: 0.95em;">
+            Esta acción no podrá ser revertida. El documento será enviado a SENIOR para confirmación final.
+          </p>
+        </div>
+
+        <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+          <p style="margin: 0; font-weight: 600; color: #374151;">Puntuación IA: 
+            <span style="color: {% if ai_validation.overall_score >= 85 %}#16a34a{% elif ai_validation.overall_score >= 60 %}#f59e0b{% else %}#dc2626{% endif %}; font-weight: bold;">
+              {{ ai_validation.overall_score|floatformat:0 }}%
+            </span>
+          </p>
+          <p style="margin: 8px 0 0; font-weight: 600; color: #374151;">Recomendación: 
+            <span style="color: {% if ai_validation.can_auto_approve %}#16a34a{% elif ai_validation.overall_score >= 60 %}#f59e0b{% else %}#dc2626{% endif %}; font-weight: bold;">
+              {% if ai_validation.can_auto_approve %}APROBABLE AUTOMÁTICAMENTE{% elif ai_validation.overall_score >= 60 %}REVISAR CUIDADOSAMENTE{% else %}RECHAZAR{% endif %}
+            </span>
+          </p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <form method="post" id="approveForm" style="display: contents;">
+            {% csrf_token %}
+            <button 
+              type="submit" 
+              name="approve" 
+              class="button"
+              style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); padding: 12px 16px; font-weight: 600;"
+            >
+              ✓ Confirmar Aprobación
+            </button>
+          </form>
+          <button 
+            type="button"
+            onclick="closeApproveModal()"
+            class="button outline"
+            style="padding: 12px 16px; font-weight: 600;"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REJECT FORM MODAL -->
+    <div id="rejectModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+      <div style="background: white; padding: 32px; border-radius: 12px; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px rgba(0,0,0,0.15); margin: 20px;">
+        <h2 style="margin-top: 0; color: #dc2626;">✗ Confirmar Rechazo</h2>
+        
+        <div style="background: #fef2f2; padding: 16px; border-radius: 8px; border-left: 4px solid #dc2626; margin: 16px 0;">
+          <p style="margin: 0; color: #7f1d1d;">
+            <strong>¿Estás seguro de que deseas rechazar este documento?</strong>
+          </p>
+          <p style="margin: 8px 0 0; color: #7f1d1d; font-size: 0.95em;">
+            Se enviará un correo al cliente explicando el motivo. Podrá reenviar con correcciones.
+          </p>
+        </div>
+
+        <form method="post" id="rejectForm" style="display: grid; gap: 16px;">
+          {% csrf_token %}
+          <div>
+            <label style="display: block; margin-bottom: 12px; font-weight: 600; color: #111827;">Razón del Rechazo</label>
+            <div style="display: grid; gap: 8px;">
+              <label style="display: flex; gap: 8px; cursor: pointer; align-items: center;">
+                <input type="radio" name="reason" value="ilegible" required style="cursor: pointer;">
+                <span>📷 Documento ilegible o borroso</span>
+              </label>
+              <label style="display: flex; gap: 8px; cursor: pointer; align-items: center;">
+                <input type="radio" name="reason" value="no_coinciden" required style="cursor: pointer;">
+                <span>⚠️ Datos no coinciden entre documentos</span>
+              </label>
+              <label style="display: flex; gap: 8px; cursor: pointer; align-items: center;">
+                <input type="radio" name="reason" value="curp_invalido" required style="cursor: pointer;">
+                <span>❌ CURP/RFC inválido o incorrecto</span>
+              </label>
+              <label style="display: flex; gap: 8px; cursor: pointer; align-items: center;">
+                <input type="radio" name="reason" value="buro_credito" required style="cursor: pointer;">
+                <span>🚫 Cliente en buró de crédito</span>
+              </label>
+              <label style="display: flex; gap: 8px; cursor: pointer; align-items: center;">
+                <input type="radio" name="reason" value="otro" required style="cursor: pointer;">
+                <span>ℹ️ Otro motivo</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #111827;">Detalles del Rechazo</label>
+            <textarea 
+              name="details" 
+              placeholder="Describe detalladamente el motivo del rechazo para que el cliente entienda qué corregir..."
+              style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-family: inherit; resize: vertical; min-height: 100px;"
+              required
+            ></textarea>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <button 
+              type="submit" 
+              name="reject" 
+              class="button"
+              style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 12px 16px; font-weight: 600;"
+            >
+              ✗ Confirmar Rechazo
+            </button>
+            <button 
+              type="button"
+              onclick="closeRejectModal()"
+              class="button outline"
+              style="padding: 12px 16px; font-weight: 600;"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      function showApproveModal() {
+        document.getElementById('approveModal').style.display = 'flex';
+      }
+
+      function closeApproveModal() {
+        document.getElementById('approveModal').style.display = 'none';
+      }
+
+      function showRejectModal() {
+        document.getElementById('rejectModal').style.display = 'flex';
+      }
+
+      function closeRejectModal() {
+        document.getElementById('rejectModal').style.display = 'none';
+      }
+
+      // Cerrar modales si se hace clic fuera
+      document.getElementById('approveModal').addEventListener('click', function(e) {
+        if (e.target === this) closeApproveModal();
+      });
+
+      document.getElementById('rejectModal').addEventListener('click', function(e) {
+        if (e.target === this) closeRejectModal();
+      });
+
+      // ESC para cerrar
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closeApproveModal();
+          closeRejectModal();
+        }
+      });
+    </script>
+  </div>
+
+  <a href="{% url 'validator1_panel' %}" class="button outline" style="margin-top: 24px;">Volver a Panel</a>
+
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "documents/base.html" %}
+
+{% block title %}Ingresar{% endblock %}
+
+{% block content %}
+  <section class="auth-card">
+    <h2>Ingresar</h2>
+    <form method="post" class="form-card">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button class="button" type="submit">Entrar</button>
+    </form>
+  </section>
+{% endblock %}

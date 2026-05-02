@@ -1,0 +1,223 @@
+{% extends "documents/base.html" %}
+
+{% block title %}Auditoría del Sistema - Banco Docs{% endblock %}
+
+{% block content %}
+  <!-- Role Header -->
+  <div class="role-header">
+    <span class="role-badge" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">📊 AUDITORÍA DEL SISTEMA</span>
+    <h1>Registro de Cambios</h1>
+    <p>Todos los cambios y validaciones realizadas en el sistema</p>
+  </div>
+
+  <!-- Filters -->
+  <div class="card" style="margin-bottom: 28px;">
+    <h3 style="margin-top: 0;">🔍 Filtros</h3>
+    <form method="get" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+      <div>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #111827;">Tipo de Acción</label>
+        <select name="action">
+          <option value="">-- Todas las acciones --</option>
+          {% for action in available_actions %}
+            <option value="{{ action }}" {% if action == filter_action %}selected{% endif %}>{{ action }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #111827;">Usuario</label>
+        <select name="user">
+          <option value="">-- Todos los usuarios --</option>
+          {% for user in available_users %}
+            <option value="{{ user.id }}" {% if user.id|stringformat:"s" == filter_user %}selected{% endif %}>{{ user.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #111827;">Tabla</label>
+        <select name="table">
+          <option value="">-- Todas las tablas --</option>
+          {% for table in available_tables %}
+            <option value="{{ table }}" {% if table == filter_table %}selected{% endif %}>{{ table }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display: flex; align-items: flex-end; gap: 12px;">
+        <button type="submit" class="button" style="flex: 1; padding: 12px 16px;">
+          🔍 Filtrar
+        </button>
+        <a href="{% url 'admin_audit_log' %}" class="button outline" style="flex: 1; padding: 12px 16px;">
+          ↺ Limpiar
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Tabs -->
+  <div style="margin-bottom: 24px;">
+    <input type="radio" id="tab1" name="audit-tabs" value="logs" onclick="toggleAuditTab('logs')" checked style="display: none;">
+    <input type="radio" id="tab2" name="audit-tabs" value="history" onclick="toggleAuditTab('history')" style="display: none;">
+    
+    <div style="display: flex; gap: 12px; border-bottom: 2px solid rgba(226,232,240,0.9);">
+      <label for="tab1" id="label-logs" style="flex: 1; padding: 12px 16px; text-align: center; cursor: pointer; background: white; border-bottom: 3px solid #2563eb; font-weight: 600; color: #2563eb; transition: all 0.3s;">
+        📋 Auditoría General ({{ logs_count }} registros)
+      </label>
+      <label for="tab2" id="label-history" style="flex: 1; padding: 12px 16px; text-align: center; cursor: pointer; background: white; color: #6b7280; font-weight: 600; transition: all 0.3s;">
+        ✓ Historial de Documentos ({{ document_history_count }} cambios)
+      </label>
+    </div>
+  </div>
+
+  <!-- Audit Logs Tab -->
+  <div id="logs-tab" class="card">
+    {% if logs %}
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha/Hora</th>
+              <th>Usuario</th>
+              <th>Tabla</th>
+              <th style="text-align: center;">Acción</th>
+              <th>Cambio</th>
+              <th>Nota</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in logs %}
+              <tr>
+                <td style="white-space: nowrap;">
+                  <strong>{{ log.changed_at|date:"Y-m-d" }}</strong><br>
+                  <span style="color: #999; font-size: 0.85em;">{{ log.changed_at|time:"H:i:s" }}</span>
+                </td>
+                <td>
+                  {% if log.changed_by %}
+                    <strong>{{ log.changed_by.username }}</strong>
+                    <div style="color: #999; font-size: 0.85em;">{{ log.changed_by.email }}</div>
+                  {% else %}
+                    <span style="color: #ccc;">Sistema</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge" style="background: rgba(59,130,246,0.2); color: #2563eb;">
+                    {{ log.table_name }}
+                  </span>
+                </td>
+                <td style="text-align: center;">
+                  <span class="badge" style="background: {% if log.action == 'CREATE' %}rgba(22,163,74,0.2); color: #16a34a;{% elif log.action == 'UPDATE' %}rgba(59,130,246,0.2); color: #2563eb;{% elif log.action == 'DELETE' %}rgba(220,38,38,0.2); color: #dc2626;{% endif %}">
+                    {{ log.action }}
+                  </span>
+                </td>
+                <td style="font-size: 0.9em;">
+                  {% if log.old_status and log.new_status %}
+                    <span style="color: #dc2626;">{{ log.old_status }}</span> → <span style="color: #16a34a;">{{ log.new_status }}</span>
+                  {% else %}
+                    <span style="color: #999;">—</span>
+                  {% endif %}
+                </td>
+                <td style="color: #666; font-size: 0.9em;">
+                  {% if log.note %}
+                    {{ log.note|truncatewords:10 }}
+                  {% else %}
+                    <span style="color: #ccc;">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="padding: 40px; text-align: center; color: #999;">
+        <p style="font-size: 1.1em;">📭 No hay registros de auditoría con los filtros seleccionados.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Document History Tab -->
+  <div id="history-tab" class="card" style="display: none;">
+    {% if document_history %}
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha/Hora</th>
+              <th>Documento</th>
+              <th>Usuario</th>
+              <th style="text-align: center;">Estado</th>
+              <th>Nota</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in document_history %}
+              <tr>
+                <td style="white-space: nowrap;">
+                  <strong>{{ entry.created_at|date:"Y-m-d" }}</strong><br>
+                  <span style="color: #999; font-size: 0.85em;">{{ entry.created_at|time:"H:i:s" }}</span>
+                </td>
+                <td>
+                  <a href="{% url 'document_detail' entry.document.id %}" style="color: #2563eb; text-decoration: none; font-weight: 600;">
+                    #{{ entry.document.id }} - {{ entry.document.title|truncatewords:3 }}
+                  </a>
+                </td>
+                <td>
+                  {% if entry.author %}
+                    <strong>{{ entry.author.username }}</strong>
+                  {% else %}
+                    <span style="color: #ccc;">Sistema</span>
+                  {% endif %}
+                </td>
+                <td style="text-align: center;">
+                  <span class="badge" style="background: {% if 'approved' in entry.status %}rgba(22,163,74,0.2); color: #16a34a;{% elif 'rejected' in entry.status %}rgba(220,38,38,0.2); color: #dc2626;{% elif 'pending' in entry.status %}rgba(245,158,11,0.2); color: #d97706;{% else %}rgba(59,130,246,0.2); color: #2563eb;{% endif %};">
+                    {{ entry.status }}
+                  </span>
+                </td>
+                <td style="color: #666; font-size: 0.9em;">
+                  {% if entry.note %}
+                    {{ entry.note|truncatewords:15 }}
+                  {% else %}
+                    <span style="color: #ccc;">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="padding: 40px; text-align: center; color: #999;">
+        <p style="font-size: 1.1em;">📭 No hay historial de documentos disponible.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Summary Stats -->
+  <div class="card" style="margin-top: 28px; background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(99,102,241,0.05)); border: 1px solid rgba(59,130,246,0.2);">
+    <h4 style="margin-top: 0; color: #2563eb;">📈 Resumen de Auditorías</h4>
+    <p style="margin: 10px 0; color: #666;">
+      Se muestran los últimos <strong>100 registros</strong> de auditoría. Usa los filtros para búsquedas más específicas.
+    </p>
+  </div>
+
+  <script>
+    function toggleAuditTab(tab) {
+      if (tab === 'logs') {
+        document.getElementById('logs-tab').style.display = 'block';
+        document.getElementById('history-tab').style.display = 'none';
+        document.getElementById('label-logs').style.borderBottomColor = '#2563eb';
+        document.getElementById('label-logs').style.color = '#2563eb';
+        document.getElementById('label-history').style.borderBottomColor = 'transparent';
+        document.getElementById('label-history').style.color = '#6b7280';
+      } else {
+        document.getElementById('logs-tab').style.display = 'none';
+        document.getElementById('history-tab').style.display = 'block';
+        document.getElementById('label-history').style.borderBottomColor = '#2563eb';
+        document.getElementById('label-history').style.color = '#2563eb';
+        document.getElementById('label-logs').style.borderBottomColor = 'transparent';
+        document.getElementById('label-logs').style.color = '#6b7280';
+      }
+    }
+  </script>
+{% endblock %}

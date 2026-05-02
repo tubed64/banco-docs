@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Banco de Documentos{% endblock %}</title>
+  <link rel="stylesheet" href="/static/documents/css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <a href="{% url 'home' %}">Banco Docs</a>
+      </div>
+       <nav class="nav-links">
+         {% if user.is_authenticated and user.profile.role == "validator1" %}
+          <a href="{% url 'validator1_panel' %}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none;">📋 Panel STAFF</a>
+        {% endif %}
+        {% if user.is_authenticated and user.profile.role == "validator2" %}
+          <a href="{% url 'validator2_panel' %}" style="background: linear-gradient(135deg, #764ba2 0%, #f093fb 100%); color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none;">✓ Panel SENIOR</a>
+        {% endif %}
+        {% if user.is_authenticated and user.profile.role == "admin" %}
+          <a href="{% url 'admin_panel' %}" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none;">⚙️ Panel Admin</a>
+        {% endif %}
+        {% if user.is_authenticated %}
+          <span class="user-info">Hola, {{ user.username }}</span>
+          <a class="button outline" href="{% url 'logout' %}">Salir</a>
+        {% else %}
+          <a class="button outline" href="{% url 'login' %}">Ingresar</a>
+          <a class="button" href="{% url 'register' %}">Registrarse</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% if messages %}
+      <div class="notifications">
+        {% for message in messages %}
+          <div class="notification {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <p>Banco de Validación de Documentos</p>
+      <span>Proyecto Django con auditoría y control de flujos</span>
+    </div>
+  </footer>
+</body>
+</html>

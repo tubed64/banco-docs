@@ -1,0 +1,4 @@
+- [x] Verificar que el archivo copilot-instructions.md exista en el directorio .github.
+- [x] El proyecto es una aplicación web Django para validación de documentos bancarios.
+- [x] Se creó la estructura del proyecto con `manage.py`, app `documents`, y configuraciones básicas.
+- [ ] Ejecutar migraciones y arrancar el servidor.

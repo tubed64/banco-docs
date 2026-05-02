@@ -1,0 +1,417 @@
+{% extends "documents/base.html" %}
+
+{% block title %}Panel Administrador - Banco Docs{% endblock %}
+
+{% block content %}
+  <!-- Role Header -->
+  <div class="role-header">
+    <span class="role-badge" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">⚙️ ADMINISTRADOR</span>
+    <h1>Gestión del Sistema</h1>
+    <p>Control total: usuarios, estadísticas y auditoría de la plataforma</p>
+  </div>
+
+  <!-- Quick Actions -->
+  <div style="display: flex; gap: 12px; margin-bottom: 28px; flex-wrap: wrap;">
+    <a href="{% url 'admin_audit_log' %}" class="button">
+      📊 Ver Auditorías
+    </a>
+    <a href="{% url 'monthly_extraction' %}" class="button" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+      📈 Extracción Mensual
+    </a>
+    <a href="#create-validator" class="button outline">
+        ➕ Ir a Crear Usuario
+      </a>
+  </div>
+
+  <!-- Main Stats Grid -->
+  <div class="validator-stats">
+    <div class="stat">
+      <span class="label">Total de Solicitudes</span>
+      <span class="value">{{ total_documents }}</span>
+    </div>
+    <div class="stat">
+      <span class="label">Pendientes de Revisión</span>
+      <span class="value">{{ pending_documents }}</span>
+    </div>
+    <div class="stat">
+      <span class="label">Aprobadas</span>
+      <span class="value">{{ approved_documents }}</span>
+    </div>
+    <div class="stat">
+      <span class="label">Rechazadas</span>
+      <span class="value">{{ rejected_documents }}</span>
+    </div>
+  </div>
+
+  <!-- STAFF PRODUCTIVITY KPI -->
+  <div class="card" style="margin-top: 24px; border-left: 5px solid {% if team_meets %}#16a34a{% else %}#dc2626{% endif %}; background: {% if team_meets %}#f0fdf4{% else %}#fef2f2{% endif %};">
+    <h2 style="margin-top: 0; color: {% if team_meets %}#15803d{% else %}#7f1d1d{% endif %};">📊 Métrica de Productividad STAFF</h2>
+    <p style="color: #6b7280; margin-top: -8px;">Meta: {{ meta_diaria }} solicitudes/día (9 hrs) | {{ meta_semanal }}/semana por STAFF</p>
+    
+    {% if staff_metrics %}
+    <div style="margin-top: 20px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+        <thead>
+          <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+            <th style="padding: 10px 12px; text-align: left;">STAFF</th>
+            <th style="padding: 10px 12px; text-align: center;">Esta Semana</th>
+            <th style="padding: 10px 12px; text-align: center;">Promedio Diario</th>
+            <th style="padding: 10px 12px; text-align: center;">Meta Diaria</th>
+            <th style="padding: 10px 12px; text-align: center;">Meta Semanal</th>
+            <th style="padding: 10px 12px; text-align: center;">Progreso</th>
+            <th style="padding: 10px 12px; text-align: center;">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for staff in staff_metrics %}
+          <tr style="border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 10px 12px;">
+              <strong>{{ staff.user.get_full_name|default:staff.user.username }}</strong>
+            </td>
+            <td style="padding: 10px 12px; text-align: center; font-weight: 600;">{{ staff.weekly_processed }}</td>
+            <td style="padding: 10px 12px; text-align: center; font-weight: 600; color: {% if staff.meets_daily %}#16a34a{% else %}#dc2626{% endif %};">{{ staff.daily_avg }}</td>
+            <td style="padding: 10px 12px; text-align: center; color: #6b7280;">{{ meta_diaria }}</td>
+            <td style="padding: 10px 12px; text-align: center; color: #6b7280;">{{ meta_semanal }}</td>
+            <td style="padding: 10px 12px; text-align: center;">
+              <div style="background: #e5e7eb; border-radius: 10px; height: 20px; overflow: hidden;">
+                <div style="background: {% if staff.meets_weekly %}#16a34a{% else %}#f59e0b{% endif %}; height: 100%; width: {{ staff.progress_pct }}%; border-radius: 10px; transition: width 0.3s;"></div>
+              </div>
+              <span style="font-size: 0.8em; color: #6b7280;">{{ staff.progress_pct }}%</span>
+            </td>
+            <td style="padding: 10px 12px; text-align: center;">
+              <span class="badge" style="background: {% if staff.meets_weekly %}#dcfce7{% else %}#fee2e2{% endif %}; color: {% if staff.meets_weekly %}#16a34a{% else %}#dc2626{% endif %}; font-weight: 600; padding: 4px 12px; border-radius: 4px;">
+                {% if staff.meets_weekly %}✅ CUMPLE{% else %}⚠️ NO CUMPLE{% endif %}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Resumen del equipo -->
+    <div style="margin-top: 24px; padding: 16px; background: {% if team_meets %}#dcfce7{% else %}#fee2e2{% endif %}; border-radius: 8px; border-left: 3px solid {% if team_meets %}#16a34a{% else %}#dc2626{% endif %};">
+      <strong style="color: {% if team_meets %}#166534{% else %}#991b1b{% endif %};">
+        Resumen del equipo: {{ total_staff_processed }}/{{ total_staff_meta }} solicitudes ({{ team_progress_pct }}%)
+      </strong>
+      <p style="margin: 4px 0 0; color: {% if team_meets %}#166534{% else %}#991b1b{% endif %}; font-size: 0.9em;">
+        {% if team_meets %}
+          El equipo STAFF cumple con la meta semanal de productividad.
+        {% else %}
+          El equipo STAFF está por debajo de la meta. Revisar carga de trabajo o tiempos de procesamiento.
+        {% endif %}
+      </p>
+    </div>
+    {% else %}
+    <div style="padding: 24px; text-align: center; color: #6b7280;">
+      <p>No hay usuarios STAFF registrados aún.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- SENIOR PRODUCTIVITY METRIC -->
+  <div class="card" style="margin-top: 24px; border-left: 5px solid #8b5cf6; background: #faf5ff;">
+    <h2 style="margin-top: 0; color: #7c3aed;">📊 Métrica de Productividad SENIOR</h2>
+    <p style="color: #6b7280; margin-top: -8px;">Decisiones de aprobación y rechazo esta semana</p>
+    
+    {% if senior_metrics %}
+    <div style="margin-top: 20px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+        <thead>
+          <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+            <th style="padding: 10px 12px; text-align: left;">SENIOR</th>
+            <th style="padding: 10px 12px; text-align: center;">✓ Aprobados</th>
+            <th style="padding: 10px 12px; text-align: center;">✗ Rechazados</th>
+            <th style="padding: 10px 12px; text-align: center;">Total</th>
+            <th style="padding: 10px 12px; text-align: center;">Tasa Aprobación</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for senior in senior_metrics %}
+          <tr style="border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 10px 12px;">
+              <strong>{{ senior.user.get_full_name|default:senior.user.username }}</strong>
+            </td>
+            <td style="padding: 10px 12px; text-align: center; font-weight: 600; color: #16a34a;">{{ senior.weekly_approved }}</td>
+            <td style="padding: 10px 12px; text-align: center; font-weight: 600; color: #dc2626;">{{ senior.weekly_rejected }}</td>
+            <td style="padding: 10px 12px; text-align: center; font-weight: 600;">{{ senior.weekly_total }}</td>
+            <td style="padding: 10px 12px; text-align: center;">
+              {% if senior.weekly_total > 0 %}
+                {{ senior.approval_rate }}%
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Resumen del equipo SENIOR -->
+    <div style="margin-top: 24px; padding: 16px; background: #ede9fe; border-radius: 8px; border-left: 3px solid #8b5cf6;">
+      <strong style="color: #5b21b6;">
+        Resumen del equipo: {{ total_senior_approved }} aprobados, {{ total_senior_rejected }} rechazados esta semana
+      </strong>
+      <p style="margin: 4px 0 0; color: #6b7280; font-size: 0.9em;">
+        Total de decisiones: {{ total_senior_approved|add:total_senior_rejected }}
+      </p>
+    </div>
+    {% else %}
+    <div style="padding: 24px; text-align: center; color: #6b7280;">
+      <p>No hay usuarios SENIOR registrados aún.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- CAPTACION METRIC -->
+  <div class="card" style="margin-top: 24px; border-left: 5px solid #10b981; background: #ecfdf5;">
+    <h2 style="margin-top: 0; color: #047857;">📊 Métrica de Captación de Clientes</h2>
+    <p style="color: #6b7280; margin-top: -8px;">Seguimiento: si el cliente continúa el proceso tras aprobación (plazo: 5 días)</p>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 20px;">
+      <!-- Captación de Clientes -->
+      <div style="background: #d1fae5; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #6ee7b7;">
+        <div style="font-size: 2.5em; font-weight: bold; color: #059669;">{{ captacion_clientes }}</div>
+        <div style="color: #047857; font-weight: 600; margin-top: 4px;">✓ Captación de Clientes</div>
+        <div style="font-size: 0.85em; color: #6b7280; margin-top: 2px;">Dieron clic a "Ver línea de crédito"</div>
+      </div>
+      
+      <!-- Clientes Perdidos -->
+      <div style="background: #fee2e2; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #fca5a5;">
+        <div style="font-size: 2.5em; font-weight: bold; color: #dc2626;">{{ continuidad_perdidos }}</div>
+        <div style="color: #991b1b; font-weight: 600; margin-top: 4px;">✗ Clientes Perdidos</div>
+        <div style="font-size: 0.85em; color: #6b7280; margin-top: 2px;">5+ días sin continuar</div>
+      </div>
+      
+      <!-- Aprobados Pendientes de Clic -->
+      <div style="background: #fef3c7; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #fcd34d;">
+        <div style="font-size: 2.5em; font-weight: bold; color: #d97706;">{{ aprobados_pendientes_clic }}</div>
+        <div style="color: #92400e; font-weight: 600; margin-top: 4px;">⏳ En Plazo</div>
+        <div style="font-size: 0.85em; color: #6b7280; margin-top: 2px;">Aprobados con &lt; 5 días</div>
+      </div>
+    </div>
+    
+    <!-- Tasa de Captación -->
+    {% if tasa_continuidad > 0 %}
+    <div style="margin-top: 24px; padding: 16px; background: #d1fae5; border-radius: 8px; border-left: 3px solid #059669;">
+      <strong style="color: #047857;">
+        Tasa de Continuidad: {{ tasa_continuidad }}%
+      </strong>
+      <p style="margin: 4px 0 0; color: #6b7280; font-size: 0.9em;">
+        De {{ captacion_clientes|add:continuidad_perdidos }} clientes que ya decidieron (captación + perdidos), {{ tasa_continuidad }}% continuaron el proceso
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Grid with Credit Types and Users -->
+  <div style="display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-top: 28px;">
+    <!-- Credit Type Distribution -->
+    <div class="card">
+      <h3 style="margin-top: 0;">📈 Distribución por Tipo de Crédito</h3>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 16px; border-radius: 12px; color: white;">
+          <div style="font-size: 1.8em; font-weight: bold;">{{ credito_total }}</div>
+          <div style="opacity: 0.9; font-size: 0.95em;">Créditos Personales</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); padding: 16px; border-radius: 12px; color: white;">
+          <div style="font-size: 1.8em; font-weight: bold;">{{ tarjeta_total }}</div>
+          <div style="opacity: 0.9; font-size: 0.95em;">Tarjetas de Crédito</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Validators Level 1 -->
+    <div class="card">
+      <h3 style="margin-top: 0;">👤 Miembros del Equipo STAFF</h3>
+      <div style="padding: 16px; background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(99,102,241,0.1)); border-radius: 12px; border: 1px solid rgba(59,130,246,0.2); margin-bottom: 12px;">
+        <div style="font-size: 2em; font-weight: bold; color: #2563eb;">{{ validator1_users.count }}</div>
+        <div style="color: #666; font-size: 0.95em;">Asignados</div>
+      </div>
+      <div style="max-height: 150px; overflow-y: auto;">
+        {% for v in validator1_users %}
+          <div style="padding: 8px; border-bottom: 1px solid #eee; font-size: 0.95em;">
+            <strong>{{ v.get_full_name|default:v.username }}</strong>
+            <div style="color: #999; font-size: 0.85em;">{{ v.email }}</div>
+          </div>
+        {% empty %}
+          <div style="padding: 12px; text-align: center; color: #999;">Sin usuarios asignados</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Validators Level 2 -->
+    <div class="card">
+      <h3 style="margin-top: 0;">✓ Miembros del Equipo SENIOR</h3>
+      <div style="padding: 16px; background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(124,58,237,0.1)); border-radius: 12px; border: 1px solid rgba(139,92,246,0.2); margin-bottom: 12px;">
+        <div style="font-size: 2em; font-weight: bold; color: #7c3aed;">{{ validator2_users.count }}</div>
+        <div style="color: #666; font-size: 0.95em;">Asignados</div>
+      </div>
+      <div style="max-height: 150px; overflow-y: auto;">
+        {% for v in validator2_users %}
+          <div style="padding: 8px; border-bottom: 1px solid #eee; font-size: 0.95em;">
+            <strong>{{ v.get_full_name|default:v.username }}</strong>
+            <div style="color: #999; font-size: 0.85em;">{{ v.email }}</div>
+          </div>
+        {% empty %}
+          <div style="padding: 12px; text-align: center; color: #999;">Sin usuarios asignados</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Validators Performance Table -->
+  <div class="card" style="margin-top: 28px;">
+    <h3 style="margin-top: 0;">👥 Gestión de Usuarios</h3>
+    {% if validators_stats %}
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th style="text-align: center;">Rol</th>
+              <th style="text-align: center;">✓ Aprobadas</th>
+              <th style="text-align: center;">✗ Rechazadas</th>
+              <th style="text-align: center;">Total</th>
+              <th style="text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for validator in validators_stats %}
+              <tr>
+                <td>
+                  <strong>{{ validator.user.get_full_name|default:validator.user.username }}</strong>
+                  <div style="color: #999; font-size: 0.85em;">{{ validator.user.email }}</div>
+                </td>
+                <td style="text-align: center;">
+                  <span class="badge" style="background: {% if 'Nivel 1' in validator.role %}linear-gradient(135deg, #3b82f6 0%, #2563eb 100%){% else %}linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%){% endif %};">
+                    {{ validator.role }}
+                  </span>
+                </td>
+                <td style="text-align: center; color: #16a34a; font-weight: 600;">{{ validator.approved }}</td>
+                <td style="text-align: center; color: #dc2626; font-weight: 600;">{{ validator.rejected }}</td>
+                <td style="text-align: center; font-weight: 600;">{{ validator.approved|add:validator.rejected }}</td>
+                <td style="text-align: center;">
+                  <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+                    <a 
+                      href="{% url 'admin_edit_validator' validator.user.id %}" 
+                      class="button outline"
+                      style="padding: 6px 10px; font-size: 0.85em; background: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc; text-decoration: none;"
+                    >
+                      ✏️ Editar
+                    </a>
+                    <a 
+                      href="{% url 'admin_delete_validator' validator.user.id %}" 
+                      class="button outline"
+                      style="padding: 6px 10px; font-size: 0.85em; background: #fee2e2; color: #7f1d1d; border: 1px solid #fecaca; text-decoration: none;"
+                    >
+                      🗑️ Eliminar
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="padding: 24px; text-align: center; color: #999;">
+        No hay usuarios registrados aún. Crea uno usando el formulario abajo.
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- CREATE VALIDATOR FORM - MAIN SECTION -->
+  <div id="create-validator" class="card" style="margin-top: 40px; background: linear-gradient(135deg, rgba(59,130,246,0.02) 0%, rgba(99,102,241,0.02) 100%); border: 2px solid rgba(59,130,246,0.2);">
+    <h2 style="margin-top: 0; color: #111827;">➕ Crear Nuevo Usuario</h2>
+    <p style="color: #6b7280; margin: 0 0 24px;">Completa el formulario para registrar un nuevo usuario en el sistema.</p>
+    
+    <form method="post" class="form-card">
+      {% csrf_token %}
+      <input type="hidden" name="create_validator" value="1">
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+        <!-- Nombre -->
+        <div>
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #111827;">Nombre</label>
+          <input 
+            type="text" 
+            name="first_name" 
+            placeholder="ej: Juan"
+            required
+          >
+        </div>
+
+        <!-- Apellido -->
+        <div>
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #111827;">Apellido</label>
+          <input 
+            type="text" 
+            name="last_name" 
+            placeholder="ej: Pérez"
+            required
+          >
+        </div>
+
+        <!-- Usuario -->
+        <div>
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #111827;">Nombre de Usuario</label>
+          <input 
+            type="text" 
+            name="username" 
+            placeholder="ej: staff_juan"
+            required
+          >
+          <small style="color: #6b7280; display: block; margin-top: 4px;">Sin espacios, solo letras, números y guiones</small>
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #111827;">Email</label>
+          <input 
+            type="email" 
+            name="email" 
+            placeholder="ej: staff@banco.com"
+            required
+          >
+        </div>
+
+        <!-- Tipo de Rol -->
+        <div>
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #111827;">Tipo de Rol</label>
+          <select name="validator_type" required>
+            <option value="">-- Selecciona un tipo --</option>
+            <option value="validator1">� STAFF (Primera Revisión)</option>
+            <option value="validator2">✓ SENIOR (Confirmación Final)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top: 24px; padding: 16px; background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(99,102,241,0.1) 100%); border-radius: 10px; border-left: 4px solid #2563eb;">
+        <strong style="color: #2563eb;">ℹ️ Información:</strong>
+        <p style="margin: 8px 0 0; color: #6b7280; font-size: 0.95em;">
+          Se creará una <strong>contraseña temporal: TempPass123!</strong> que el usuario deberá cambiar en su primer acceso. El rol define si será STAFF (primera revisión) o SENIOR (confirmación final).
+        </p>
+      </div>
+
+      <button 
+        type="submit" 
+        class="button"
+        style="width: 100%; padding: 14px 16px; margin-top: 24px; font-size: 1.05rem; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);"
+      >
+          ✅ Crear Usuario
+      </button>
+    </form>
+  </div>
+
+  <!-- Clients Summary -->
+  <div class="card" style="margin-top: 28px;">
+    <h3 style="margin-top: 0;">👥 Usuarios en el Sistema</h3>
+    <div style="padding: 16px; background: linear-gradient(135deg, rgba(245,87,108,0.1), rgba(240,147,251,0.1)); border-radius: 12px; border: 1px solid rgba(245,87,108,0.2); text-align: center;">
+      <div style="font-size: 2em; font-weight: bold; color: #dc2626;">{{ client_users.count }}</div>
+      <div style="color: #666; font-size: 0.95em;">Clientes Registrados</div>
+    </div>
+  </div>
+
+{% endblock %}

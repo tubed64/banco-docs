@@ -1,0 +1,86 @@
+{% extends "documents/base.html" %}
+
+{% block title %}Documento #{{ document.id }}{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <h2>Documento: {{ document.title }}</h2>
+    <div class="detail-grid">
+      <div class="info-item">
+        <strong>Cliente</strong>
+        {{ document.user.username }}
+      </div>
+      <div class="info-item">
+        <strong>Estado</strong>
+        <span class="badge {{ document.status }}">{{ document.get_status_display }}</span>
+      </div>
+      <div class="info-item">
+        <strong>Subido</strong>
+        {{ document.uploaded_at|date:"d/m/Y H:i" }}
+      </div>
+      <div class="info-item">
+        <strong>Asignado a</strong>
+        {{ document.assigned_to.username if document.assigned_to else "Sin asignar" }}
+      </div>
+      <div class="info-item">
+        <strong>Archivo</strong>
+        <a class="button outline" href="{{ document.file.url }}" target="_blank">Ver documento</a>
+      </div>
+    </div>
+
+    {% if user == document.assigned_to and document.status == "pending" %}
+      <div class="form-card">
+        <form method="post">
+          {% csrf_token %}
+          <button name="approve" class="button approve" type="submit">Aprobar</button>
+        </form>
+
+        <div>
+          <h3>Rechazar y enviar corrección</h3>
+          <form method="post">
+            {% csrf_token %}
+            {{ comment_form.as_p }}
+            <button name="reject" class="button reject" type="submit">Rechazar</button>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if user == document.user and document.status == "rejected" %}
+      <div>
+        <h3>Subir corrección</h3>
+        <form method="post" enctype="multipart/form-data" class="form-card">
+          {% csrf_token %}
+          {{ correction_form.as_p }}
+          <button name="resubmit" class="button" type="submit">Reenviar documento</button>
+        </form>
+      </div>
+    {% endif %}
+
+    <div class="card">
+      <h3>Historial</h3>
+      <ul>
+        {% for item in document.history.all %}
+          <li>
+            {{ item.created_at|date:"d/m/Y H:i" }} - <strong>{{ item.status|capfirst }}</strong>
+            {% if item.author %}por {{ item.author.username }}{% endif %}
+            {% if item.note %}- {{ item.note }}{% endif %}
+          </li>
+        {% empty %}
+          <li>No hay historial.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Comentarios</h3>
+      <ul>
+        {% for comment in document.comments.all %}
+          <li>{{ comment.created_at|date:"d/m/Y H:i" }} - {{ comment.author.username }}: {{ comment.comment }}</li>
+        {% empty %}
+          <li>No hay comentarios.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+{% endblock %}

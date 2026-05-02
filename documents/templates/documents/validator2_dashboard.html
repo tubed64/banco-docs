@@ -1,0 +1,74 @@
+{% extends "documents/base.html" %}
+
+{% block title %}Panel SENIOR{% endblock %}
+
+{% block content %}
+  <section class="role-header">
+    <div class="role-badge validator2">✓ SENIOR (Aprobación Final)</div>
+    <h1>Panel de Validación - Segunda Revisión</h1>
+    <p>Confirma validaciones de Nivel 1 y aprueba para enviar a ERP.</p>
+  </section>
+
+  <div class="validator-stats">
+    <div class="stat">
+      <span class="label">Pendientes</span>
+      <span class="value">{{ pending_count }}</span>
+    </div>
+    <div class="stat">
+      <span class="label">En Revisión</span>
+      <span class="value">{{ reviewing_count }}</span>
+    </div>
+    <div class="stat">
+      <span class="label">Aprobados</span>
+      <span class="value">{{ approved_count }}</span>
+    </div>
+    <div class="stat">
+      <span class="label">Rechazados</span>
+      <span class="value">{{ rejected_count }}</span>
+    </div>
+  </div>
+
+  <section class="card">
+    <h2>Documentos para Confirmación Final</h2>
+    
+    {% if documents %}
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+          <thead>
+            <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+              <th style="padding: 10px 12px; text-align: left;">#</th>
+              <th style="padding: 10px 12px; text-align: left;">Cliente</th>
+              <th style="padding: 10px 12px; text-align: left;">Tipo</th>
+              <th style="padding: 10px 12px; text-align: left;">STAFF</th>
+              <th style="padding: 10px 12px; text-align: left;">Comentario STAFF</th>
+              <th style="padding: 10px 12px; text-align: center;">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for document in documents %}
+              <tr style="border-bottom: 1px solid #e5e7eb; background: #f0fdf4;">
+                <td style="padding: 8px 12px; color: #6b7280;">#{{ document.id }}</td>
+                <td style="padding: 8px 12px;">
+                  <strong>{{ document.user.get_full_name|default:document.user.username }}</strong>
+                  {% if document.nombre_completo %}
+                    <br><small style="color: #6b7280;">{{ document.nombre_completo }}</small>
+                  {% endif %}
+                </td>
+                <td style="padding: 8px 12px;">{{ document.get_credit_type_display }}</td>
+                <td style="padding: 8px 12px; font-size: 0.85em;">{{ document.validator1.username|default:"-" }}</td>
+                <td style="padding: 8px 12px; font-size: 0.85em; color: #6b7280; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ document.validator1_comment|default:"Sin comentarios" }}</td>
+                <td style="padding: 8px 12px; text-align: center;">
+                  <a href="{% url 'validator2_review' document.id %}" class="button" style="font-size: 0.85em; padding: 6px 14px; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);">Confirmar →</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>No hay documentos pendientes de confirmación en este momento.</p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

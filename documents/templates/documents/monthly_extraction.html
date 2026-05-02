@@ -1,0 +1,243 @@
+{% extends "documents/base.html" %}
+
+{% block title %}Extracción Mensual - Admin{% endblock %}
+
+{% block content %}
+  <div class="role-header">
+    <span class="role-badge" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">📊 EXTRACCIÓN MENSUAL</span>
+    <h1>Reporte de Documentos por Mes</h1>
+    <p>Filtra y visualiza documentos según fecha y estado de validación</p>
+  </div>
+
+  <!-- FILTERS SECTION -->
+  <div class="card" style="margin-top: 24px; background: #f9fafb; border: 1px solid #e5e7eb;">
+    <h3 style="margin-top: 0; color: #111827;">🔍 Filtros</h3>
+    
+    <form method="get" style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
+      <!-- Año -->
+      <div style="flex: 1; min-width: 120px;">
+        <label for="year" style="display: block; margin-bottom: 6px; font-weight: 600; color: #374151;">Año:</label>
+        <select name="year" id="year" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95em;">
+          {% for y in years_available %}
+            <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Mes -->
+      <div style="flex: 1; min-width: 120px;">
+        <label for="month" style="display: block; margin-bottom: 6px; font-weight: 600; color: #374151;">Mes:</label>
+        <select name="month" id="month" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95em;">
+          <option value="1" {% if month == 1 %}selected{% endif %}>Enero</option>
+          <option value="2" {% if month == 2 %}selected{% endif %}>Febrero</option>
+          <option value="3" {% if month == 3 %}selected{% endif %}>Marzo</option>
+          <option value="4" {% if month == 4 %}selected{% endif %}>Abril</option>
+          <option value="5" {% if month == 5 %}selected{% endif %}>Mayo</option>
+          <option value="6" {% if month == 6 %}selected{% endif %}>Junio</option>
+          <option value="7" {% if month == 7 %}selected{% endif %}>Julio</option>
+          <option value="8" {% if month == 8 %}selected{% endif %}>Agosto</option>
+          <option value="9" {% if month == 9 %}selected{% endif %}>Septiembre</option>
+          <option value="10" {% if month == 10 %}selected{% endif %}>Octubre</option>
+          <option value="11" {% if month == 11 %}selected{% endif %}>Noviembre</option>
+          <option value="12" {% if month == 12 %}selected{% endif %}>Diciembre</option>
+        </select>
+      </div>
+
+      <!-- Estado -->
+      <div style="flex: 1; min-width: 180px;">
+        <label for="status" style="display: block; margin-bottom: 6px; font-weight: 600; color: #374151;">Estado:</label>
+        <select name="status" id="status" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95em;">
+          <option value="">-- Todos los estados --</option>
+          {% for status_key, status_label in all_statuses %}
+            <option value="{{ status_key }}" {% if status_key == status_filter %}selected{% endif %}>{{ status_label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Día específico -->
+      <div style="flex: 1; min-width: 150px;">
+        <label for="day" style="display: block; margin-bottom: 6px; font-weight: 600; color: #374151;">Día (opcional):</label>
+        <input type="date" name="day" id="day" value="{{ day_filter }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95em;">
+      </div>
+
+      <!-- Botón Filtrar -->
+      <button type="submit" class="button" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; padding: 8px 24px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+        🔍 Filtrar
+      </button>
+      
+      <a href="{% url 'monthly_extraction' %}" class="button" style="background: #e5e7eb; color: #374151; border: none; padding: 8px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; text-decoration: none;">
+        🔄 Limpiar
+      </a>
+    </form>
+  </div>
+
+  <!-- STATS GRID -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 24px;">
+    <div style="padding: 16px; background: #f0f9ff; border-radius: 8px; border: 2px solid #3b82f6; text-align: center;">
+      <div style="font-size: 1.2em; font-weight: 600; color: #1e40af;">{{ total }}</div>
+      <div style="font-size: 0.9em; color: #1e40af; margin-top: 4px;">Total</div>
+    </div>
+
+    <div style="padding: 16px; background: #fef3c7; border-radius: 8px; border: 2px solid #f59e0b; text-align: center;">
+      <div style="font-size: 1.2em; font-weight: 600; color: #92400e;">{{ status_counts.validator1_review }}</div>
+      <div style="font-size: 0.9em; color: #92400e; margin-top: 4px;">En Revisión STAFF</div>
+    </div>
+
+    <div style="padding: 16px; background: #e9d5ff; border-radius: 8px; border: 2px solid #8b5cf6; text-align: center;">
+      <div style="font-size: 1.2em; font-weight: 600; color: #5b21b6;">{{ status_counts.validator2_review }}</div>
+      <div style="font-size: 0.9em; color: #5b21b6; margin-top: 4px;">En Revisión SENIOR</div>
+    </div>
+
+    <div style="padding: 16px; background: #dcfce7; border-radius: 8px; border: 2px solid #16a34a; text-align: center;">
+      <div style="font-size: 1.2em; font-weight: 600; color: #15803d;">{{ status_counts.approved }}</div>
+      <div style="font-size: 0.9em; color: #15803d; margin-top: 4px;">Aprobados</div>
+    </div>
+
+    <div style="padding: 16px; background: #fee2e2; border-radius: 8px; border: 2px solid #dc2626; text-align: center;">
+      <div style="font-size: 1.2em; font-weight: 600; color: #7f1d1d;">{{ status_counts.rejected }}</div>
+      <div style="font-size: 0.9em; color: #7f1d1d; margin-top: 4px;">Rechazados</div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTS TABLE -->
+  <div class="card" style="margin-top: 24px;">
+    <h3 style="margin-top: 0; color: #111827;">📋 Documentos de {{ month_name }} {{ year }}</h3>
+    
+    {% if documents %}
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+          <thead>
+            <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+              <th style="padding: 12px; text-align: left; font-weight: 600; color: #111827;">Cliente</th>
+              <th style="padding: 12px; text-align: left; font-weight: 600; color: #111827;">Título</th>
+              <th style="padding: 12px; text-align: center; font-weight: 600; color: #111827;">Estado</th>
+              <th style="padding: 12px; text-align: center; font-weight: 600; color: #111827;">Tipo de Crédito</th>
+              <th style="padding: 12px; text-align: left; font-weight: 600; color: #111827;">Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for doc in documents %}
+              <tr style="border-bottom: 1px solid #e5e7eb; hover: background: #f9fafb;">
+                <td style="padding: 12px; color: #374151;">{{ doc.user.first_name }} {{ doc.user.last_name }}</td>
+                <td style="padding: 12px; color: #374151;">{{ doc.title }}</td>
+                <td style="padding: 12px; text-align: center;">
+                  <span class="badge {{ doc.status }}" style="display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 0.85em; font-weight: 600;
+                    {% if doc.status == 'approved' %}
+                      background: #dcfce7; color: #15803d;
+                    {% elif doc.status == 'rejected' %}
+                      background: #fee2e2; color: #7f1d1d;
+                    {% elif doc.status == 'pending_validator1' or doc.status == 'validator1_review' %}
+                      background: #fef3c7; color: #92400e;
+                    {% elif doc.status == 'pending_validator2' or doc.status == 'validator2_review' %}
+                      background: #e9d5ff; color: #5b21b6;
+                    {% endif %}">
+                    {{ doc.get_status_display }}
+                  </span>
+                </td>
+                <td style="padding: 12px; text-align: center; color: #374151;">{{ doc.get_credit_type_display }}</td>
+                <td style="padding: 12px; color: #6b7280; font-size: 0.85em;">{{ doc.uploaded_at|date:"d/m/Y H:i" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="padding: 24px; text-align: center; color: #6b7280;">
+        <div style="font-size: 3em; margin-bottom: 12px;">📭</div>
+        <p>No hay documentos para el período y estado seleccionados.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- DELETE SECTION -->
+  <div class="card" style="margin-top: 24px; background: #fef2f2; border: 2px solid #dc2626;">
+    <h3 style="margin-top: 0; color: #7f1d1d;">🗑️ Eliminar Datos del Corte</h3>
+    <p style="color: #991b1b; margin-bottom: 16px;">Esta acción eliminará permanentemente los documentos seleccionados. Requiere contraseña de administrador.</p>
+    
+    <form method="get" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px;">
+      <div style="flex: 1; min-width: 150px;">
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #7f1d1d;">Filtrar por día específico (opcional):</label>
+        <input type="date" id="deleteDayFilter" value="{{ day_filter }}" style="width: 100%; padding: 8px; border: 1px solid #dc2626; border-radius: 6px; font-size: 0.95em;">
+      </div>
+      <div style="flex: 1; min-width: 200px;">
+        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #7f1d1d;">Filtrar por estado (opcional):</label>
+        <select id="deleteStatusFilter" style="width: 100%; padding: 8px; border: 1px solid #dc2626; border-radius: 6px; font-size: 0.95em;">
+          <option value="">-- Todos los estados --</option>
+          {% for status_key, status_label in all_statuses %}
+            <option value="{{ status_key }}">{{ status_label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+    
+    <button onclick="confirmDelete()" class="button" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+      🗑️ Borrar Datos del Corte
+    </button>
+  </div>
+
+  <!-- EXPORT ACTIONS -->
+  <div style="display: flex; gap: 12px; margin-top: 24px;">
+    <a href="{% url 'export_monthly_excel' %}?year={{ year }}&month={{ month }}&status={{ status_filter }}&day={{ day_filter }}" class="button" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+      📥 Descargar Excel
+    </a>
+    <a href="{% url 'admin_panel' %}" class="button" style="background: #e5e7eb; color: #374151; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+      ← Volver al Dashboard
+    </a>
+  </div>
+
+  <!-- Delete Form (hidden) -->
+  <form id="deleteForm" method="post" action="{% url 'delete_monthly_documents' %}" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="year" value="{{ year }}">
+    <input type="hidden" name="month" value="{{ month }}">
+    <input type="hidden" name="status_filter" id="deleteStatusInput" value="{{ status_filter }}">
+    <input type="hidden" name="day_filter" id="deleteDayInput" value="{{ day_filter }}">
+    <input type="hidden" name="password" id="deletePassword">
+  </form>
+
+  <script>
+    function confirmDelete() {
+      // Obtener valores de los filtros de borrado
+      const deleteDay = document.getElementById('deleteDayFilter').value;
+      const deleteStatus = document.getElementById('deleteStatusFilter').value;
+      
+      // Actualizar campos del formulario
+      document.getElementById('deleteDayInput').value = deleteDay;
+      document.getElementById('deleteStatusInput').value = deleteStatus;
+      
+      // Construir mensaje de confirmación
+      let message = '¿Está seguro que desea BORRAR los datos';
+      if (deleteDay) {
+        message += ' del día ' + deleteDay;
+      } else {
+        message += ' del corte mensual';
+      }
+      if (deleteStatus) {
+        message += ' con estado: ' + deleteStatus;
+      }
+      message += '?\n\nEsta acción NO se puede revertir.';
+      
+      // Primera confirmación
+      if (!confirm(message)) {
+        return;
+      }
+      
+      // Segunda confirmación
+      if (!confirm('⚠️ ADVERTENCIA FINAL: Esta eliminación es permanente.\n\n¿Confirma la eliminación?')) {
+        return;
+      }
+      
+      // Solicitar contraseña
+      const password = prompt('Para confirmar, ingrese su contraseña de administrador:');
+      if (!password) {
+        alert('Operación cancelada: No se proporcionó contraseña.');
+        return;
+      }
+      
+      // Asignar contraseña y enviar formulario
+      document.getElementById('deletePassword').value = password;
+      document.getElementById('deleteForm').submit();
+    }
+  </script>
+
+{% endblock %}
