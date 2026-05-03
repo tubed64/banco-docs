@@ -53,19 +53,10 @@ WSGI_APPLICATION = "banking.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.sqlite3"),
-        "NAME": os.getenv("DB_NAME", str(BASE_DIR / "db.sqlite3")),
-        "USER": os.getenv("DB_USER", ""),
-        "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST", ""),
-        "PORT": os.getenv("DB_PORT", ""),
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
-
-# Si Render proporciona DATABASE_URL (PostgreSQL)
-import dj_database_url
-if os.getenv("DATABASE_URL"):
-    DATABASES["default"] = dj_database_url.config(default=os.getenv("DATABASE_URL"))
 
 AUTH_PASSWORD_VALIDATORS = [
     {
