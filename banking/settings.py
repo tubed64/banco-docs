@@ -7,7 +7,7 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-reemplaza-esta-clave-con-una-real")
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in ("1", "true", "yes")
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver", "0.0.0.0"]
+ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
