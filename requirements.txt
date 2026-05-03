@@ -2,7 +2,7 @@ Django==6.0.3
 gunicorn
 python-dotenv
 PyMuPDF==1.27.2.3
-Pillow==11.0.0
+Pillow
 django-mssql-backend==2.8.1
 pyodbc==5.3.0
 cryptography
