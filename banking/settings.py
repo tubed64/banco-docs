@@ -102,10 +102,16 @@ MEDIA_URL = "/media/"
 # In Render, use /tmp for uploaded files (writable)
 if os.getenv("RENDER"):
     MEDIA_ROOT = "/tmp/media"
+    # Make sure the directory exists
+    os.makedirs(str(MEDIA_ROOT), exist_ok=True)
 else:
     MEDIA_ROOT = BASE_DIR / "media"
-if not os.path.exists(MEDIA_ROOT):
-    os.makedirs(MEDIA_ROOT, exist_ok=True)
+    if not os.path.exists(str(MEDIA_ROOT)):
+        os.makedirs(str(MEDIA_ROOT), exist_ok=True)
+
+# Serve media files in development
+if not os.getenv("RENDER"):
+    import dj_database_url  # This is just to check if we're in production
 
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
