@@ -62,8 +62,10 @@ DATABASES = {
     }
 }
 
-if DATABASES["default"]["ENGINE"] == "django.db.backends.sqlite3":
-    DATABASES["default"]["NAME"] = str(BASE_DIR / os.getenv("DB_NAME", "db.sqlite3"))
+# Si Render proporciona DATABASE_URL (PostgreSQL)
+import dj_database_url
+if os.getenv("DATABASE_URL"):
+    DATABASES["default"] = dj_database_url.config(default=os.getenv("DATABASE_URL"))
 
 AUTH_PASSWORD_VALIDATORS = [
     {

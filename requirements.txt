@@ -9,3 +9,4 @@ cryptography
 python-dateutil
 numpy
 whitenoise
+dj-database-url
