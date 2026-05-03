@@ -7,19 +7,27 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-replace-this-key-with-a-real")
 DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("1", "true", "yes")
-ALLOWED_HOSTS = os.getenv(
-    "DJANGO_ALLOWED_HOSTS",
-    "banco-web.railway.app,localhost,127.0.0.1",
-).split(",")
+
+# Accept requests from any hostname so Railway's load balancer always reaches Django.
+# The DJANGO_ALLOWED_HOSTS env var can restrict this to specific domains in production.
+_allowed_hosts_env = os.getenv("DJANGO_ALLOWED_HOSTS", "")
+if _allowed_hosts_env:
+    ALLOWED_HOSTS = _allowed_hosts_env.split(",")
+else:
+    ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = os.getenv(
     "DJANGO_CSRF_TRUSTED_ORIGINS",
     "https://banco-web.railway.app",
 ).split(",")
 
-# Redirect HTTP → HTTPS in production; disabled when DEBUG=True or explicitly overridden
-SECURE_SSL_REDIRECT = os.getenv("DJANGO_SECURE_SSL_REDIRECT", str(not DEBUG)).lower() in ("1", "true", "yes")
-# Trust Railway's load-balancer forwarded-proto header
+# Railway terminates TLS at the load balancer and forwards plain HTTP to Gunicorn,
+# so we must NOT redirect HTTP→HTTPS inside Django (that would cause redirect loops).
+# SECURE_SSL_REDIRECT is disabled by default; set DJANGO_SECURE_SSL_REDIRECT=true only
+# if you are running Django behind a proxy that does NOT strip the HTTPS scheme.
+SECURE_SSL_REDIRECT = os.getenv("DJANGO_SECURE_SSL_REDIRECT", "false").lower() in ("1", "true", "yes")
+# Trust Railway's load-balancer forwarded-proto header so Django knows the original
+# request was HTTPS even though Gunicorn received plain HTTP.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 INSTALLED_APPS = [
