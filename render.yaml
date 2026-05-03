@@ -13,4 +13,6 @@ services:
         value: False
       - key: DJANGO_SECRET_KEY
         value: django-insecure-reemplaza-esta-clave-con-una-real
+      - key: PADDLEOCR_AVAILABLE
+        value: False
     preDeployCommand: python manage.py migrate

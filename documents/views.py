@@ -223,19 +223,20 @@ def determine_client_type(document) -> dict:
 def perform_ai_validation(document) -> dict:
     """
     Realiza validación automática inteligente del documento usando OCR y validaciones
-    
-    Returns: {
-        'success': bool,
-        'ocr_confidence': float,
-        'overall_score': float,
-        'recommendation': str,
-        'curp_valid': bool,
-        'rfc_valid': bool,
-        'data_consistent': bool,
-        'details': dict,
-        'can_auto_approve': bool
-    }
+    (En plan gratuito, retorna validación manual)
     """
+    # Si estamos en la nube sin PaddleOCR, retornar validación manual
+    try:
+        from documents.utils import PADDLEOCR_AVAILABLE
+        if not PADDLEOCR_AVAILABLE:
+            return {
+                'success': False,
+                'error': 'Análisis automático no disponible en plan gratuito. Procede con validación manual.',
+                'can_auto_approve': False
+            }
+    except:
+        pass
+    
     try:
         validator = DocumentValidator()
         
