@@ -1,9 +1,15 @@
 import os
 import re
-import numpy as np
 from pathlib import Path
 from PIL import Image
 from datetime import datetime
+
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    np = None
+    NUMPY_AVAILABLE = False
 
 try:
     from paddleocr import PaddleOCR
