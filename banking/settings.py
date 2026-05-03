@@ -51,6 +51,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "banking.wsgi.application"
 
+# Database
+# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -58,7 +61,7 @@ DATABASES = {
     }
 }
 
-# Usar PostgreSQL si hay DATABASE_URL (Neon)
+# Use PostgreSQL if DATABASE_URL is available (Neon)
 try:
     from dj_database_url import parse as dj_db_url
     if os.getenv("DATABASE_URL"):
@@ -67,10 +70,6 @@ try:
         DATABASES["default"]["OPTIONS"] = {
             "sslmode": "require",
         }
-except ImportError:
-    pass
-except ImportError:
-    pass
 except ImportError:
     pass
 
@@ -98,8 +97,7 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "documents" / "static"]
 MEDIA_URL = "/media/"
-# En Render, usar /tmp para archivos subidos (writeable)
-import os
+# In Render, use /tmp for uploaded files (writable)
 if os.getenv("RENDER"):
     MEDIA_ROOT = "/tmp/media"
 else:
@@ -114,16 +112,7 @@ LOGIN_URL = "login"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Encryption Configuration
-# Genera una clave si no está configurada
-import os
-try:
-    from cryptography.fernet import Fernet
-    if not os.getenv("FERNET_KEY"):
-        FERNET_KEY = Fernet.generate_key().decode()
-    else:
-        FERNET_KEY = os.getenv("FERNET_KEY")
-except:
-    FERNET_KEY = "c2V_lsFZtVxZ6H7bOzHvTlXoHv3cZQZxZ6H7bOzHvTlXo="
+FERNET_KEY = os.getenv("FERNET_KEY", "c2V_lsFZtVxZ6H7bOzHvTlXoHv3cZQZxZ6H7bOzHvTlXo=")
 
 # Email Configuration
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
