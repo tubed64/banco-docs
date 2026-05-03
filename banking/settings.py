@@ -82,7 +82,14 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "documents" / "static"]
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+# En Render, usar /tmp para archivos subidos (writeable)
+import os
+if os.getenv("RENDER"):
+    MEDIA_ROOT = "/tmp/media"
+else:
+    MEDIA_ROOT = BASE_DIR / "media"
+if not os.path.exists(MEDIA_ROOT):
+    os.makedirs(MEDIA_ROOT, exist_ok=True)
 
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
@@ -91,7 +98,16 @@ LOGIN_URL = "login"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Encryption Configuration
-FERNET_KEY = os.getenv("FERNET_KEY", None)
+# Genera una clave si no está configurada
+import os
+try:
+    from cryptography.fernet import Fernet
+    if not os.getenv("FERNET_KEY"):
+        FERNET_KEY = Fernet.generate_key().decode()
+    else:
+        FERNET_KEY = os.getenv("FERNET_KEY")
+except:
+    FERNET_KEY = "c2V_lsFZtVxZ6H7bOzHvTlXoHv3cZQZxZ6H7bOzHvTlXo="
 
 # Email Configuration
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
