@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-reemplaza-esta-clave-con-una-real")
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-replace-this-key-with-a-real")
 DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("1", "true", "yes")
 ALLOWED_HOSTS = ["*"]
 
@@ -63,18 +63,12 @@ DATABASES = {
 
 # Use PostgreSQL if DATABASE_URL is available (Neon)
 try:
-    from dj_database_url import parse as dj_db_url
+    import dj_database_url
     db_url = os.getenv("DATABASE_URL")
     if db_url:
-        # Add endpoint_id for Neon if not present
-        if "endpoint" not in db_url and "ep-rough-wildflower-ajjapois" in db_url:
-            endpoint_id = db_url.split("/")[2].split(".")[0].split("-", 1)[1]
-            if "?" in db_url:
-                db_url = db_url.replace("?", "&options=endpoint%3D" + endpoint_id + "?")
-            else:
-                db_url = db_url + "?options=endpoint%3D" + endpoint_id
-        DATABASES["default"] = dj_db_url(db_url, conn_max_age=600)
+        DATABASES["default"] = dj_database_url.parse(db_url, conn_max_age=600)
         DATABASES["default"]["ENGINE"] = "django.db.backends.postgresql"
+        # SSL settings for Neon
         DATABASES["default"]["OPTIONS"] = {
             "sslmode": "require",
         }
