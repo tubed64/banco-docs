@@ -8,3 +8,4 @@ pyodbc==5.3.0
 cryptography
 python-dateutil
 numpy
+whitenoise
