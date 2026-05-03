@@ -64,8 +64,16 @@ DATABASES = {
 # Use PostgreSQL if DATABASE_URL is available (Neon)
 try:
     from dj_database_url import parse as dj_db_url
-    if os.getenv("DATABASE_URL"):
-        DATABASES["default"] = dj_db_url(os.getenv("DATABASE_URL"), conn_max_age=600)
+    db_url = os.getenv("DATABASE_URL")
+    if db_url:
+        # Add endpoint_id for Neon if not present
+        if "endpoint" not in db_url and "ep-rough-wildflower-ajjapois" in db_url:
+            endpoint_id = db_url.split("/")[2].split(".")[0].split("-", 1)[1]
+            if "?" in db_url:
+                db_url = db_url.replace("?", "&options=endpoint%3D" + endpoint_id + "?")
+            else:
+                db_url = db_url + "?options=endpoint%3D" + endpoint_id
+        DATABASES["default"] = dj_db_url(db_url, conn_max_age=600)
         DATABASES["default"]["ENGINE"] = "django.db.backends.postgresql"
         DATABASES["default"]["OPTIONS"] = {
             "sslmode": "require",
