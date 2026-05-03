@@ -58,6 +58,22 @@ DATABASES = {
     }
 }
 
+# Usar PostgreSQL si hay DATABASE_URL (Neon)
+try:
+    from dj_database_url import parse as dj_db_url
+    if os.getenv("DATABASE_URL"):
+        DATABASES["default"] = dj_db_url(os.getenv("DATABASE_URL"), conn_max_age=600)
+        DATABASES["default"]["ENGINE"] = "django.db.backends.postgresql"
+        DATABASES["default"]["OPTIONS"] = {
+            "sslmode": "require",
+        }
+except ImportError:
+    pass
+except ImportError:
+    pass
+except ImportError:
+    pass
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
