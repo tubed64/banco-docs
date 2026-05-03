@@ -7,7 +7,20 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-replace-this-key-with-a-real")
 DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("1", "true", "yes")
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = os.getenv(
+    "DJANGO_ALLOWED_HOSTS",
+    "banco-web.railway.app,localhost,127.0.0.1",
+).split(",")
+
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    "https://banco-web.railway.app",
+).split(",")
+
+# Redirect HTTP → HTTPS in production; disabled when DEBUG=True or explicitly overridden
+SECURE_SSL_REDIRECT = os.getenv("DJANGO_SECURE_SSL_REDIRECT", str(not DEBUG)).lower() in ("1", "true", "yes")
+# Trust Railway's load-balancer forwarded-proto header
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -98,20 +111,19 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "documents" / "static"]
+# WhiteNoise: serve compressed, cache-busted static files in production
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 MEDIA_URL = "/media/"
-# In Render, use /tmp for uploaded files (writable)
-if os.getenv("RENDER"):
+# Railway and Render both need a writable path for uploaded files
+_media_root_env = os.getenv("MEDIA_ROOT")
+if _media_root_env:
+    MEDIA_ROOT = _media_root_env
+elif os.getenv("RENDER"):
     MEDIA_ROOT = "/tmp/media"
-    # Make sure the directory exists
-    os.makedirs(str(MEDIA_ROOT), exist_ok=True)
 else:
     MEDIA_ROOT = BASE_DIR / "media"
-    if not os.path.exists(str(MEDIA_ROOT)):
-        os.makedirs(str(MEDIA_ROOT), exist_ok=True)
-
-# Serve media files in development
-if not os.getenv("RENDER"):
-    import dj_database_url  # This is just to check if we're in production
+os.makedirs(str(MEDIA_ROOT), exist_ok=True)
 
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
